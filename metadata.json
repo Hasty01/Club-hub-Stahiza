@@ -1,0 +1,6 @@
+{
+  "name": "STAHIZZA ICT Club Hub",
+  "description": "The central operating system for student members and patrons of Standard High High School Zzana (STAHIZZA) ICT Club. Code, Connect, Create with AI-powered assistance and gamified learning.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

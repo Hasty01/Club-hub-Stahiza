@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/chat",
+      "dest": "/api/chat.ts"
+    },
+    {
+      "source": "/api/:path*",
+      "dest": "/api/:path*"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "dest": "/index.html"
+    }
+  ]
+}
