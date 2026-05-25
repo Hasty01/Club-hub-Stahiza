@@ -3,15 +3,15 @@
   "rewrites": [
     {
       "source": "/api/chat",
-      "destination": "/api/chat.ts"
+      "dest": "/api/chat.ts"
     },
     {
       "source": "/api/:path*",
-      "destination": "/api/:path*"
+      "dest": "/api/:path*"
     },
     {
       "source": "/((?!api/).*)",
-      "destination": "/index.html"
+      "dest": "/index.html"
     }
   ]
 }
