@@ -81,6 +81,25 @@ export default function Register({ onNavigateToLogin, onRegisterSuccess, onBackT
 
       console.log("User created:", data);
 
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .insert({
+            id: data.user.id,
+            full_name: name,
+            email: email,
+            class_level: classLevel,
+            avatar_url: selectedAvatar,
+            role: role,
+          });
+
+        if (profileError) {
+          console.log(profileError.message);
+          setError(profileError.message);
+          return;
+        }
+      }
+
       // Successfully authenticated/created account
       if (onRegisterSuccess) {
         onRegisterSuccess(name, email, classLevel, selectedAvatar, role);

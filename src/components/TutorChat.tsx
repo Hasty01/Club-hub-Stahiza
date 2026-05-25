@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Message, StudentProfile } from "../types";
 import { Send, Sparkles, User, Terminal, HelpCircle, Loader2 } from "lucide-react";
+import { isSupabaseConfigured, supabase } from "../lib/supabaseClient";
+import { fetchMessagesFromSupabase, saveMessageToSupabase } from "../lib/supabaseSync";
 
 interface TutorChatProps {
   userProfile: StudentProfile;
@@ -28,6 +30,53 @@ export default function TutorChat({ userProfile, onGrantXp }: TutorChatProps) {
   
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  // Sync historical messages & hook Supabase Realtime (Phase 5)
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+
+    async function loadChatHistory() {
+      const history = await fetchMessagesFromSupabase();
+      if (history && history.length > 0) {
+        setMessages(history);
+      }
+    }
+    loadChatHistory();
+
+    const channel = supabase
+      .channel("messages_room")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+        },
+        (payload) => {
+          const newMsg = payload.new as any;
+          setMessages((prev) => {
+            // Check to prevent double-insert of our local optimistic message
+            const exists = prev.some(
+              (m) => m.content === newMsg.content && m.timestamp === newMsg.timestamp
+            );
+            if (exists) return prev;
+            return [
+              ...prev,
+              {
+                role: newMsg.role as "user" | "model",
+                content: newMsg.content,
+                timestamp: newMsg.timestamp,
+              },
+            ];
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
@@ -37,19 +86,33 @@ export default function TutorChat({ userProfile, onGrantXp }: TutorChatProps) {
 
     setErrorStatus(null);
     const userMessageText = rawText.trim();
+    // Prefix with student's name for collaborative visibility
+    const finalContent = `**[${userProfile.name}]**: ${userMessageText}`;
+    const localTimestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     setInputValue("");
+
+    const newLocalMessage: Message = {
+      role: "user",
+      content: finalContent,
+      timestamp: localTimestamp
+    };
 
     const newMessages: Message[] = [
       ...messages,
-      {
-        role: "user",
-        content: userMessageText,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }
+      newLocalMessage
     ];
 
+    // Optimistically update local view
     setMessages(newMessages);
     setIsLoading(true);
+
+    if (isSupabaseConfigured) {
+      await saveMessageToSupabase({
+        role: "user",
+        content: finalContent,
+        timestamp: localTimestamp
+      });
+    }
 
     try {
       const response = await fetch("/api/chat", {
@@ -71,15 +134,26 @@ export default function TutorChat({ userProfile, onGrantXp }: TutorChatProps) {
       }
 
       const data = await response.json();
-      
+      const modelTimestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      const modelMessage = {
+        role: "model" as const,
+        content: data.content,
+        timestamp: modelTimestamp
+      };
+
       setMessages(prev => [
         ...prev,
-        {
+        modelMessage
+      ]);
+
+      if (isSupabaseConfigured) {
+        await saveMessageToSupabase({
           role: "model",
           content: data.content,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }
-      ]);
+          timestamp: modelTimestamp
+        });
+      }
 
       // Grant a small amount of XP for engaging the AI Tutor (limit reward frequency conceptually)
       if (Math.random() > 0.4) {

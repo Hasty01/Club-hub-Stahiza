@@ -391,3 +391,178 @@ export async function recordAttendanceInSupabase(log: DbAttendanceLog): Promise<
     return false;
   }
 }
+
+// Showcase Projects CRUD helpers (Phase 4)
+export interface DbShowcaseProject {
+  id: string;
+  title: string;
+  developer: string;
+  class_level: string;
+  description: string;
+  tags: string[];
+  code_snippet?: string;
+  likes: number;
+  views: number;
+  category: string;
+  thumbnail_url: string;
+}
+
+export async function fetchProjectsFromSupabase(): Promise<any[] | null> {
+  if (!isSupabaseConfigured) return null;
+  try {
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Supabase Projects Fetch Error:", error);
+      return null;
+    }
+
+    return data.map((p: any) => ({
+      id: p.id,
+      title: p.title,
+      developer: p.developer,
+      classLevel: p.class_level,
+      description: p.description,
+      tags: p.tags || [],
+      codeSnippet: p.code_snippet,
+      likes: p.likes || 0,
+      views: p.views || 0,
+      category: p.category,
+      thumbnailUrl: p.thumbnail_url
+    }));
+  } catch (err) {
+    console.error("Supabase Projects Fetch Exception:", err);
+    return null;
+  }
+}
+
+export async function saveProjectToSupabase(project: any): Promise<boolean> {
+  if (!isSupabaseConfigured) return false;
+  try {
+    const dbProj: DbShowcaseProject = {
+      id: project.id,
+      title: project.title,
+      developer: project.developer,
+      class_level: project.classLevel,
+      description: project.description,
+      tags: project.tags,
+      code_snippet: project.codeSnippet,
+      likes: project.likes,
+      views: project.views,
+      category: project.category,
+      thumbnail_url: project.thumbnailUrl
+    };
+    const { error } = await supabase
+      .from("projects")
+      .insert([dbProj]);
+
+    if (error) {
+      console.error("Supabase Project Save Error:", error);
+    }
+    return !error;
+  } catch (err) {
+    return false;
+  }
+}
+
+export async function incrementProjectLikesInSupabase(id: string): Promise<boolean> {
+  if (!isSupabaseConfigured) return false;
+  try {
+    const { data, error: fetchErr } = await supabase
+      .from("projects")
+      .select("likes")
+      .eq("id", id)
+      .single();
+
+    if (fetchErr) return false;
+
+    const { error } = await supabase
+      .from("projects")
+      .update({ likes: (data?.likes || 0) + 1 })
+      .eq("id", id);
+
+    return !error;
+  } catch (err) {
+    return false;
+  }
+}
+
+// Real-Time Chat Messages helpers (Phase 5)
+export interface DbMessage {
+  id?: string;
+  role: "user" | "model";
+  content: string;
+  timestamp: string;
+}
+
+export async function fetchMessagesFromSupabase(): Promise<any[] | null> {
+  if (!isSupabaseConfigured) return null;
+  try {
+    const { data, error } = await supabase
+      .from("messages")
+      .select("*")
+      .order("id", { ascending: true }); // order by sequential id or standard created_at
+
+    if (error) {
+      console.error("Supabase Messages Fetch Error:", error);
+      return null;
+    }
+
+    return data.map((m: any) => ({
+      role: m.role,
+      content: m.content,
+      timestamp: m.timestamp
+    }));
+  } catch (err) {
+    console.error("Supabase Messages Fetch Exception:", err);
+    return null;
+  }
+}
+
+export async function saveMessageToSupabase(message: { role: string; content: string; timestamp: string }): Promise<boolean> {
+  if (!isSupabaseConfigured) return false;
+  try {
+    const { error } = await supabase
+      .from("messages")
+      .insert([message]);
+
+    return !error;
+  } catch (err) {
+    return false;
+  }
+}
+
+// Leaderboards helpers (Phase 9)
+export async function fetchLeaderboardFromSupabase(): Promise<any[] | null> {
+  if (!isSupabaseConfigured) return null;
+  try {
+    const { data, error } = await supabase
+      .from("leaderboard")
+      .select("*");
+
+    if (error) {
+      // Fallback to fetching top profiles if leaderboard table/view is not fully materialized or fails:
+      const { data: profiles, error: pError } = await supabase
+        .from("profiles")
+        .select("*")
+        .order("xp", { ascending: false })
+        .limit(10);
+      
+      if (pError) return null;
+      return profiles.map((p, idx) => ({
+        rank: idx + 1,
+        name: p.name,
+        xp: p.xp,
+        class_level: p.class_level,
+        role: p.role
+      }));
+    }
+
+    return data;
+  } catch (err) {
+    return null;
+  }
+}

@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ShowcaseProject, StudentProfile } from "../types";
 import { INITIAL_PROJECTS } from "../data";
-import { ExternalLink, Heart, Eye, PlusCircle, Globe, Terminal, Code, Award, Check } from "lucide-react";
+import { ExternalLink, Heart, Eye, PlusCircle, Globe, Terminal, Code, Award, Check, Loader2 } from "lucide-react";
+import { isSupabaseConfigured } from "../lib/supabaseClient";
+import { fetchProjectsFromSupabase, saveProjectToSupabase, incrementProjectLikesInSupabase } from "../lib/supabaseSync";
 
 interface ProjectShowcaseProps {
   userProfile: StudentProfile;
@@ -18,6 +20,7 @@ export default function ProjectShowcase({ userProfile, onGrantXp }: ProjectShowc
   const [projects, setProjects] = useState<ShowcaseProject[]>(INITIAL_PROJECTS);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
+  const [dbLoading, setDbLoading] = useState(false);
   
   // Create project form states
   const [title, setTitle] = useState("");
@@ -27,7 +30,20 @@ export default function ProjectShowcase({ userProfile, onGrantXp }: ProjectShowc
   const [codeSnip, setCodeSnip] = useState("");
   const [selectedThumIdx, setSelectedThumIdx] = useState(0);
 
-  const handleCreateProject = (e: React.FormEvent) => {
+  useEffect(() => {
+    async function loadProjects() {
+      if (!isSupabaseConfigured) return;
+      setDbLoading(true);
+      const data = await fetchProjectsFromSupabase();
+      if (data && data.length > 0) {
+        setProjects(data);
+      }
+      setDbLoading(false);
+    }
+    loadProjects();
+  }, []);
+
+  const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !desc.trim()) return;
 
@@ -59,14 +75,21 @@ export default function ProjectShowcase({ userProfile, onGrantXp }: ProjectShowc
     setCodeSnip("");
 
     onGrantXp(50, `Submitted Practical Portfolio Project: ${title}`);
+
+    if (isSupabaseConfigured) {
+      await saveProjectToSupabase(newProj);
+    }
   };
 
-  const incrementLikes = (id: string, e: React.MouseEvent) => {
+  const incrementLikes = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setProjects(prev => prev.map(p => {
       if (p.id === id) return { ...p, likes: p.likes + 1 };
       return p;
     }));
+    if (isSupabaseConfigured) {
+      await incrementProjectLikesInSupabase(id);
+    }
   };
 
   // Filter conditions
@@ -80,7 +103,10 @@ export default function ProjectShowcase({ userProfile, onGrantXp }: ProjectShowc
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h3 className="font-sans font-semibold text-slate-100 text-sm">Create & Showcase Laboratory</h3>
-          <p className="text-[11px] text-slate-400 font-mono">Browse peer student project portfolios from computer studies classes.</p>
+          <p className="text-[11px] text-slate-400 font-mono flex items-center gap-1.5">
+            <span>Browse peer student project portfolios from computer studies classes.</span>
+            {dbLoading && <Loader2 className="w-3 h-3 text-pink-400 animate-spin" />}
+          </p>
         </div>
 
         <button

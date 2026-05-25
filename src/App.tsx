@@ -104,6 +104,24 @@ export default function App() {
 
   const [levelUpMessage, setLevelUpMessage] = useState<string | null>(null);
 
+  const [leaderboard, setLeaderboard] = useState<any[]>([
+    { name: "Kyobe Arthur", xp: 1980 },
+    { name: "Jerome Maku", xp: 1910 },
+    { name: "Nabulo Maria", xp: 1850 }
+  ]);
+
+  useEffect(() => {
+    async function loadLeaderboard() {
+      if (!isSupabaseConfigured) return;
+      const { fetchLeaderboardFromSupabase } = await import("./lib/supabaseSync");
+      const list = await fetchLeaderboardFromSupabase();
+      if (list && list.length > 0) {
+        setLeaderboard(list.slice(0, 5));
+      }
+    }
+    loadLeaderboard();
+  }, [userProfile.xp]);
+
   // Fetch initial profile from Supabase
   useEffect(() => {
     async function loadDbProfile() {
@@ -638,18 +656,12 @@ export default function App() {
                     </div>
 
                     <div className="space-y-2 text-xs font-mono">
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-400">1. Kyobe Arthur</span>
-                        <span className="text-pink-400 font-bold">1,980 XP</span>
-                      </div>
-                      <div className="flex items-center justify-between border-t border-slate-950 pt-1.5">
-                        <span className="text-slate-400">2. Jerome Maku</span>
-                        <span className="text-pink-400 font-medium">1,910 XP</span>
-                      </div>
-                      <div className="flex items-center justify-between border-t border-slate-950 pt-1.5">
-                        <span className="text-slate-400">3. Nabulo Maria</span>
-                        <span className="text-slate-400">1,850 XP</span>
-                      </div>
+                      {leaderboard.map((item, idx) => (
+                        <div key={idx} className={`flex items-center justify-between ${idx > 0 ? "border-t border-slate-950 pt-1.5" : ""}`}>
+                          <span className="text-slate-400">{idx + 1}. {item?.name || "Member"}</span>
+                          <span className="text-pink-400 font-bold">{(item?.xp || 0).toLocaleString()} XP</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
 

@@ -113,6 +113,45 @@ export default function ProfileCard({ userProfile, onUpdateProfile }: ProfileCar
             </div>
 
             <div>
+              <label className="text-[10px] uppercase font-mono text-slate-500 block mb-1">Upload Custom Avatar Image (Supabase Storage bucket)</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    
+                    const { isSupabaseConfigured, supabase } = await import("../lib/supabaseClient");
+                    if (!isSupabaseConfigured) {
+                      console.warn("Supabase not active; simulating avatar upload cleanly.");
+                      // Grant XP on simulator mode anyway!
+                      onUpdateProfile({ avatarSeed: "CodeNinja" });
+                      return;
+                    }
+
+                    try {
+                      const { data, error } = await supabase.storage
+                        .from('avatars')
+                        .upload(`users/${Date.now()}_${file.name}`, file);
+
+                      if (error) {
+                        console.error("Storage bucket upload error:", error);
+                      } else {
+                        console.log("Uploaded profile asset to avatars:", data);
+                        // Reward student with unlocked credential
+                        onUpdateProfile({ avatarSeed: "CodeNinja" });
+                      }
+                    } catch (err) {
+                      console.error("Storage error:", err);
+                    }
+                  }}
+                  className="w-full bg-slate-900 border border-slate-800 text-slate-400 focus:border-indigo-500 text-xs text-slate-100 p-2 rounded-lg outline-none cursor-pointer file:cursor-pointer file:mr-3 file:py-1 file:px-2 flex-1 file:rounded-md file:border-0 file:text-[10px] file:font-bold file:bg-indigo-600/15 file:text-indigo-400 hover:file:bg-indigo-600/30"
+                />
+              </div>
+            </div>
+
+            <div>
               <label className="text-[10px] uppercase font-mono text-slate-500 block mb-1.5">Select Avatar Emoji Preset</label>
               <div className="grid grid-cols-6 gap-2">
                 {AVATAR_PRESETS.map((preset) => (
