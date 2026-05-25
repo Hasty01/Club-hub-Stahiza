@@ -17,6 +17,17 @@ export default function NoticeBoard({ userProfile, onGrantXp }: NoticeBoardProps
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [dbLoading, setDbLoading] = useState(false);
 
+  // Sync notice post role dynamically with Simulated system role
+  useEffect(() => {
+    if (userProfile.role === "president") {
+      setSubmissionRole("President");
+    } else if (userProfile.role === "cabinet") {
+      setSubmissionRole("Cabinet Member");
+    } else {
+      setSubmissionRole("Student");
+    }
+  }, [userProfile.role]);
+
   // Fetch from Supabase and subscribe to realtime updates of club_feed
   useEffect(() => {
     async function loadNotices() {
@@ -168,9 +179,21 @@ export default function NoticeBoard({ userProfile, onGrantXp }: NoticeBoardProps
                 onChange={(e) => setSubmissionRole(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 rounded-md p-2 text-xs text-slate-300 outline-none focus:border-indigo-500"
               >
-                <option value="Student">Student (Class Level Representative)</option>
-                <option value="President">Club President Role (Auto Pinned)</option>
-                <option value="Patron">ICT Department Patron Role (Auto Pinned)</option>
+                {userProfile.role === "president" && (
+                  <>
+                    <option value="President">Club President Role (Auto Pinned 👑)</option>
+                    <option value="Student">Student (Class Level Representative)</option>
+                  </>
+                )}
+                {userProfile.role === "cabinet" && (
+                  <>
+                    <option value="Cabinet Member">Cabinet Administrator (🛡️)</option>
+                    <option value="Student">Student (Class Level Representative)</option>
+                  </>
+                )}
+                {userProfile.role === "member" && (
+                  <option value="Student">Student (Class Level Representative 🌱)</option>
+                )}
               </select>
             </div>
           </div>

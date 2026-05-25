@@ -13,6 +13,7 @@ export interface StudentProfile {
   solvedChallengeIds: string[];
   avatarSeed: string; // e.g., "Felix", "CodeNinja"
   rank: string;
+  role: "president" | "cabinet" | "member";
 }
 
 export interface Quest {

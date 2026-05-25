@@ -281,7 +281,8 @@ export const TOP_MEMBERS: StudentProfile[] = [
     unlockedBadges: ["Web Dev", "UNEB Ace", "Club Hero", "Fast Coder"],
     solvedChallengeIds: ["c-1", "c-2"],
     avatarSeed: "Felix",
-    rank: "President"
+    rank: "President",
+    role: "president"
   },
   {
     name: "Kyobe Arthur",
@@ -291,7 +292,8 @@ export const TOP_MEMBERS: StudentProfile[] = [
     unlockedBadges: ["Data Master", "Code Ninja"],
     solvedChallengeIds: ["c-1"],
     avatarSeed: "CodeNinja",
-    rank: "Systems VP"
+    rank: "Systems VP",
+    role: "cabinet"
   },
   {
     name: "Nabulo Maria",
@@ -301,7 +303,8 @@ export const TOP_MEMBERS: StudentProfile[] = [
     unlockedBadges: ["Design Scholar", "CSS Artist"],
     solvedChallengeIds: ["c-1", "c-2"],
     avatarSeed: "Maria",
-    rank: "Senior Rep"
+    rank: "Senior Rep",
+    role: "member"
   },
   {
     name: "Alinyo Felix",
@@ -311,7 +314,8 @@ export const TOP_MEMBERS: StudentProfile[] = [
     unlockedBadges: ["Binary Pro", "Math Wizard"],
     solvedChallengeIds: ["c-1"],
     avatarSeed: "Felix",
-    rank: "Game Anchor"
+    rank: "Game Anchor",
+    role: "member"
   }
 ];
 

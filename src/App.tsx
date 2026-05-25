@@ -49,8 +49,17 @@ import GamesLounge from "./components/GamesLounge";
 import AttendanceView from "./components/AttendanceView";
 import ResourcesView from "./components/ResourcesView";
 
+// Import new modular routing pages
+import Landing from "./pages/Landing";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Dashboard from "./pages/Dashboard";
+
 export default function App() {
+  const [currentScreen, setCurrentScreen] = useState<"landing" | "login" | "register" | "app">("landing");
+
   const [activeTab, setActiveTab] = useState<
+    | "dashboard"
     | "feed"
     | "community"
     | "messages"
@@ -65,7 +74,7 @@ export default function App() {
     | "games"
     | "showcase"
     | "profile"
-  >("feed");
+  >("dashboard");
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
@@ -88,7 +97,8 @@ export default function App() {
       unlockedBadges: ["Starter Bit"],
       solvedChallengeIds: [],
       avatarSeed: "Sandra",
-      rank: "Cadet"
+      rank: "Cadet",
+      role: "president"
     };
   });
 
@@ -176,14 +186,48 @@ export default function App() {
     }));
   };
 
+  const handleLoginSuccess = (email: string) => {
+    const cleanName = email.split("@")[0]
+      .replace(/[^a-zA-Z0-9]/g, " ")
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+
+    setUserProfile((prev) => ({
+      ...prev,
+      name: cleanName || prev.name,
+    }));
+    handleGrantXp(10, "Workspace Access Credentials authenticated!");
+    setCurrentScreen("app");
+    setActiveTab("dashboard");
+  };
+
+  const handleRegisterSuccess = (name: string, email: string, classLevel: string, avatarSeed: string, role: "president" | "cabinet" | "member") => {
+    setUserProfile({
+      name,
+      classLevel,
+      xp: 120,
+      level: 1,
+      unlockedBadges: ["Starter Bit"],
+      solvedChallengeIds: [],
+      avatarSeed,
+      rank: classLevel.includes("Patron") ? "Patron Mentor" : "Cadet",
+      role
+    });
+    handleGrantXp(15, "Created member portal keys successfully!");
+    setCurrentScreen("app");
+    setActiveTab("dashboard");
+  };
+
   const activeAvatarInfo = AVATAR_PRESETS.find(a => a.id === userProfile.avatarSeed) || AVATAR_PRESETS[0];
 
   const levelFloorXp = (userProfile.level - 1) * 300;
   const xpInCurrentLevel = userProfile.xp - levelFloorXp;
   const progressPercent = Math.min(100, Math.max(0, (xpInCurrentLevel / 300) * 100));
 
-  // Comprehensive 14 Navigation tabs based on screenshots schema
+  // Comprehensive 15 Navigation tabs based on screenshots schema
   const navigationItems = [
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, desc: "Personal stats & metrics" },
     { id: "feed", label: "Club Feed", icon: Rss, desc: "News & peer discussions" },
     { id: "community", label: "Community", icon: Users2, desc: "Explore peer contributors" },
     { id: "messages", label: "Messages", icon: MessageSquare, desc: "Syllabus Chat rooms" },
@@ -199,6 +243,39 @@ export default function App() {
     { id: "showcase", label: "Showcase", icon: Award, desc: "Publish digital creations" },
     { id: "profile", label: "Profile", icon: User, desc: "Configure student registers" }
   ];
+
+  if (currentScreen === "landing") {
+    return (
+      <Landing
+        onEnterHub={() => {
+          setCurrentScreen("app");
+          setActiveTab("dashboard");
+        }}
+        onNavigateToLogin={() => setCurrentScreen("login")}
+        onNavigateToRegister={() => setCurrentScreen("register")}
+      />
+    );
+  }
+
+  if (currentScreen === "login") {
+    return (
+      <Login
+        onLoginSuccess={handleLoginSuccess}
+        onNavigateToRegister={() => setCurrentScreen("register")}
+        onBackToLanding={() => setCurrentScreen("landing")}
+      />
+    );
+  }
+
+  if (currentScreen === "register") {
+    return (
+      <Register
+        onRegisterSuccess={handleRegisterSuccess}
+        onNavigateToLogin={() => setCurrentScreen("login")}
+        onBackToLanding={() => setCurrentScreen("landing")}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#070A13] text-slate-100 flex font-sans antialiased text-sm select-text selection:bg-pink-600/30 selection:text-pink-100">
@@ -436,6 +513,20 @@ export default function App() {
             PRIMARY MAIN SCROLLER CONTAINER
            ------------------------------------------------------------- */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 space-y-6 pb-20 select-text">
+
+          {/* VIEW 0: METRICS STUDENT DASHBOARD */}
+          {activeTab === "dashboard" && (
+            <Dashboard
+              userProfile={userProfile}
+              onNavigateToTab={(tab) => {
+                setActiveTab(tab as any);
+              }}
+              onLogout={() => {
+                setCurrentScreen("landing");
+              }}
+              onUpdateProfile={handleUpdateProfile}
+            />
+          )}
 
           {/* VIEW 1: CLUB FEED (Corresponds to Screenshot 1 "Club Feed") */}
           {activeTab === "feed" && (

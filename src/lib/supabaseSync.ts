@@ -12,6 +12,7 @@ export interface DbProfile {
   solved_challenge_ids: string[];
   avatar_seed: string;
   rank: string;
+  role?: string;
 }
 
 export interface DbNotice {
@@ -65,6 +66,7 @@ export function mapProfileFromDb(db: DbProfile): StudentProfile {
     solvedChallengeIds: db.solved_challenge_ids || [],
     avatarSeed: db.avatar_seed,
     rank: db.rank,
+    role: (db.role as "president" | "cabinet" | "member") || "member",
   };
 }
 
@@ -79,6 +81,7 @@ export function mapProfileToDb(profile: StudentProfile, id: string = "primary_st
     solved_challenge_ids: profile.solvedChallengeIds,
     avatar_seed: profile.avatarSeed,
     rank: profile.rank,
+    role: profile.role,
   };
 }
 
