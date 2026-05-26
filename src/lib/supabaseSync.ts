@@ -9,8 +9,13 @@ export interface DbProfile {
   xp: number;
   level: number;
   avatar_url: string;
+  avatar_seed?: string;
   role?: string;
   email?: string;
+  username?: string;
+  bio?: string;
+  streak?: number;
+  badges?: string[];
 }
 
 export interface DbNotice {
@@ -58,14 +63,17 @@ export function mapProfileFromDb(db: DbProfile): StudentProfile {
   return {
     name: db.full_name || "Unknown Pupil",
     classLevel: db.class_level || "Senior 5",
-    xp: db.xp || 120,
+    xp: db.xp !== undefined && db.xp !== null ? db.xp : 120,
     level: db.level || 1,
-    unlockedBadges: [],
+    unlockedBadges: db.badges || [],
     solvedChallengeIds: [],
-    avatarSeed: db.avatar_url || "Maria",
+    avatarSeed: db.avatar_seed || db.avatar_url || "Maria",
     rank: db.class_level && db.class_level.includes("Patron") ? "Patron Mentor" : "Cadet",
     role: (db.role as "president" | "cabinet" | "member") || "member",
     email: db.email,
+    username: db.username || "",
+    bio: db.bio || "",
+    streak: db.streak || 0,
   };
 }
 
@@ -77,8 +85,13 @@ export function mapProfileToDb(profile: StudentProfile, id: string = "primary_st
     xp: profile.xp,
     level: profile.level,
     avatar_url: profile.avatarSeed,
+    avatar_seed: profile.avatarSeed,
     role: profile.role,
     email: profile.email,
+    badges: profile.unlockedBadges || [],
+    streak: profile.streak || 0,
+    bio: profile.bio || "",
+    username: profile.username || profile.email?.split("@")[0].replace(/[^a-zA-Z0-9]/g, "").toLowerCase() || "",
   };
 }
 

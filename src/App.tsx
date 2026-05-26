@@ -391,8 +391,12 @@ export default function App() {
         {!sidebarCollapsed && (
           <div className="p-4 border-b border-slate-900/60 bg-[#0B1220]/40 space-y-2">
             <div className="flex items-center gap-2.5">
-              <span className="text-xl bg-slate-950 w-8 h-8 rounded-xl flex items-center justify-center border border-slate-800 shrink-0">
-                {activeAvatarInfo.emoji}
+              <span className="text-xl bg-slate-950 w-8 h-8 rounded-xl flex items-center justify-center border border-slate-800 shrink-0 overflow-hidden">
+                {userProfile.avatarSeed.startsWith("http") || userProfile.avatarSeed.startsWith("data:") ? (
+                  <img src={userProfile.avatarSeed} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  activeAvatarInfo.emoji
+                )}
               </span>
               <div className="truncate">
                 <p className="text-xs font-bold text-slate-200 truncate">{userProfile.name}</p>
@@ -557,8 +561,12 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-lg bg-slate-900 w-7 h-7 rounded-lg flex items-center justify-center border border-slate-804">
-              {activeAvatarInfo.emoji}
+            <span className="text-lg bg-slate-900 w-7 h-7 rounded-lg flex items-center justify-center border border-[#1e293b] overflow-hidden">
+              {userProfile.avatarSeed.startsWith("http") || userProfile.avatarSeed.startsWith("data:") ? (
+                <img src={userProfile.avatarSeed} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              ) : (
+                activeAvatarInfo.emoji
+              )}
             </span>
           </div>
         </header>

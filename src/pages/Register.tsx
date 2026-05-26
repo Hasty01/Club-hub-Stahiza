@@ -37,6 +37,14 @@ export default function Register({ onNavigateToLogin, onRegisterSuccess, onBackT
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  const isEmailAdminRegister = email.toLowerCase().trim() === "hastyjoel1@gmail.com";
+
+  React.useEffect(() => {
+    if (role === "president" && !isEmailAdminRegister) {
+      setRole("member");
+    }
+  }, [email, role, isEmailAdminRegister]);
+
   const isDev = (import.meta as any).env?.DEV || 
                 window.location.hostname === "localhost" || 
                 window.location.hostname === "127.0.0.1" || 
@@ -87,17 +95,24 @@ export default function Register({ onNavigateToLogin, onRegisterSuccess, onBackT
       console.log("User created:", data);
 
       if (data.user) {
+        const generatedUsername = email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "").toLowerCase() + Math.floor(Math.random() * 900 + 100);
+
         const { error: profileError } = await supabase
           .from("profiles")
           .upsert({
             id: data.user.id,
             full_name: name,
+            username: generatedUsername,
             class_level: classLevel,
+            avatar_seed: selectedAvatar,
             avatar_url: selectedAvatar,
             role: role,
             xp: 120,
             level: 1,
             email: email,
+            streak: 0,
+            bio: "",
+            badges: [],
           });
 
         if (profileError) {
@@ -279,7 +294,7 @@ export default function Register({ onNavigateToLogin, onRegisterSuccess, onBackT
               <span className="text-[8px] bg-pink-500/10 text-pink-400 border border-pink-500/20 px-1 py-0.2 rounded font-extrabold uppercase">REQUIRED</span>
             </label>
 
-            <div id="role-choices-grid" className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div id="role-choices-grid" className={`grid grid-cols-1 ${isEmailAdminRegister ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-2`}>
               {/* Normal Member */}
               <button
                 key="choice-member"
@@ -315,21 +330,23 @@ export default function Register({ onNavigateToLogin, onRegisterSuccess, onBackT
               </button>
 
               {/* Club President */}
-              <button
-                key="choice-president"
-                id="role-btn-president"
-                type="button"
-                onClick={() => setRole("president")}
-                className={`flex flex-col items-center justify-center p-3 rounded-xl border cursor-pointer transition-all gap-1.5 text-center ${
-                  role === "president"
-                    ? "bg-indigo-500/15 border-indigo-500 text-indigo-300 shadow-[0_0_15px_rgba(99,102,241,0.1)]"
-                    : "bg-slate-950/50 border-slate-800/80 text-slate-400 hover:border-slate-700/80"
-                }`}
-              >
-                <Crown className="w-5 h-5 text-amber-400" />
-                <span className="text-[10px] font-bold tracking-tight font-sans">Club President</span>
-                <span className="text-[8px] font-mono text-slate-500 uppercase">Overall Access</span>
-              </button>
+              {isEmailAdminRegister && (
+                <button
+                  key="choice-president"
+                  id="role-btn-president"
+                  type="button"
+                  onClick={() => setRole("president")}
+                  className={`flex flex-col items-center justify-center p-3 rounded-xl border cursor-pointer transition-all gap-1.5 text-center ${
+                    role === "president"
+                      ? "bg-indigo-500/15 border-indigo-500 text-indigo-300 shadow-[0_0_15px_rgba(99,102,241,0.1)]"
+                      : "bg-slate-950/50 border-slate-800/80 text-slate-400 hover:border-slate-700/80"
+                  }`}
+                >
+                  <Crown className="w-5 h-5 text-amber-400" />
+                  <span className="text-[10px] font-bold tracking-tight font-sans">Club President</span>
+                  <span className="text-[8px] font-mono text-slate-500 uppercase">Overall Access</span>
+                </button>
+              )}
             </div>
 
             {/* Quick descriptive summary box of selected role authorization */}
@@ -349,36 +366,7 @@ export default function Register({ onNavigateToLogin, onRegisterSuccess, onBackT
             </div>
           </div>
 
-          {/* Avatar Presets Picker */}
-          <div id="avatar-field-container" className="pt-2">
-            <label id="label-avatar" className="block text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-2 font-bold">
-              Select Your Tech Avatar Preset
-            </label>
-            <div id="avatar-presets-grid" className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {AVATAR_PRESETS.map((p) => {
-                const isSelected = selectedAvatar === p.id;
-                return (
-                  <button
-                    key={p.id}
-                    id={`avatar-btn-${p.id}`}
-                    type="button"
-                    onClick={() => setSelectedAvatar(p.id)}
-                    className={`flex items-center gap-2 p-2 rounded-xl text-left border cursor-pointer transition-all ${
-                      isSelected
-                        ? "bg-pink-500/10 border-pink-500 text-pink-300"
-                        : "bg-slate-950/50 border-slate-800/80 text-slate-400 hover:border-slate-700/80"
-                    }`}
-                  >
-                    <span id={`avatar-emoji-${p.id}`} className="text-lg">{p.emoji}</span>
-                    <div id={`avatar-info-${p.id}`} className="leading-tight">
-                      <p id={`avatar-label-id-${p.id}`} className="text-[10px] font-bold font-sans">{p.id}</p>
-                      <p id={`avatar-label-txt-${p.id}`} className="text-[8px] font-mono text-slate-500">{p.label}</p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+
 
           <button
             id="btn-register-submit"

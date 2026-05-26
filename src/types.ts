@@ -11,10 +11,13 @@ export interface StudentProfile {
   level: number;
   unlockedBadges: string[];
   solvedChallengeIds: string[];
-  avatarSeed: string; // e.g., "Felix", "CodeNinja"
+  avatarSeed: string; // e.g., "Felix", "CodeNinja" / custom URL
   rank: string;
   role: "president" | "cabinet" | "member";
   email?: string;
+  username?: string;
+  bio?: string;
+  streak?: number;
 }
 
 export interface Quest {

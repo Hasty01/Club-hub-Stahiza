@@ -160,84 +160,91 @@ export default function Dashboard({ userProfile, onNavigateToTab, onLogout, onUp
     ? "🛡️ Cabinet Member" 
     : "🌱 Club Member";
 
+  const isAdmin = 
+    userProfile.email?.toLowerCase().trim() === "hastyjoel1@gmail.com" || 
+    userProfile.username?.toLowerCase().trim() === "a_j0el" ||
+    userProfile.name?.toLowerCase().includes("atamba joel");
+
   return (
     <div id="dashboard-container" className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 font-sans">
       
       {/* =========================================================================
           🔑 SIMULATOR DEVICE TOOLBAR (Allows instant role switching for grading)
           ========================================================================= */}
-      <div id="role-simulator-bar" className="max-w-7xl mx-auto mb-6 bg-slate-900/90 border border-slate-800/80 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl relative overflow-hidden">
-        <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-pink-500 to-indigo-500"></div>
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 bg-gradient-to-r from-pink-500/10 to-indigo-500/10 border border-pink-500/20 rounded-xl text-pink-400">
-            <Key className="w-4 h-4" />
+      {isAdmin && (
+        <div id="role-simulator-bar" className="max-w-7xl mx-auto mb-6 bg-slate-900/90 border border-slate-800/80 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl relative overflow-hidden">
+          <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-pink-500 to-indigo-500"></div>
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-gradient-to-r from-pink-500/10 to-indigo-500/10 border border-pink-500/20 rounded-xl text-pink-400">
+              <Key className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">System Access Gateways (Simulator)</h4>
+              <p className="text-[10px] text-slate-400 font-mono">Select any access tier below to instantly simulate permissions and unlock custom tools!</p>
+            </div>
           </div>
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">System Access Gateways (Simulator)</h4>
-            <p className="text-[10px] text-slate-400 font-mono">Select any access tier below to instantly simulate permissions and unlock custom tools!</p>
+
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            {onUpdateProfile && (
+              <>
+                {/* MEMBER BUTTON */}
+                <button
+                  id="sim-role-member"
+                  onClick={() => {
+                    onUpdateProfile({ role: "member" });
+                    addTerminalLog("SIM_ROLE: Changed current access key down to [🌱 Member]");
+                    showTemporaryFeedback("Lowered access credentials to Club Member.");
+                  }}
+                  className={`flex-1 md:flex-none px-4 py-2 rounded-xl text-[10px] font-mono font-black tracking-widest uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
+                    userProfile.role === "member"
+                      ? "bg-pink-500/15 border-pink-500/50 text-pink-300 shadow-[0_0_10px_rgba(236,72,153,0.15)]"
+                      : "bg-slate-950/60 border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <Users2 className="w-3.5 h-3.5" />
+                  <span>🌱 MEMBER</span>
+                </button>
+
+                {/* CABINET BUTTON */}
+                <button
+                  id="sim-role-cabinet"
+                  onClick={() => {
+                    onUpdateProfile({ role: "cabinet" });
+                    addTerminalLog("SIM_ROLE: Escalated current access credentials to [🛡️ Cabinet Admin]");
+                    showTemporaryFeedback("Escalated credentials to Cabinet Member!");
+                  }}
+                  className={`flex-1 md:flex-none px-4 py-2 rounded-xl text-[10px] font-mono font-black tracking-widest uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
+                    userProfile.role === "cabinet"
+                      ? "bg-purple-500/20 border-purple-500/50 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.15)]"
+                      : "bg-slate-950/60 border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>🛡️ CABINET</span>
+                </button>
+
+                {/* PRESIDENT BUTTON */}
+                <button
+                  id="sim-role-president"
+                  onClick={() => {
+                    onUpdateProfile({ role: "president" });
+                    addTerminalLog("SIM_ROLE: Overloaded access permissions to overall superadmin [👑 President]");
+                    showTemporaryFeedback("Supreme Overlord Credentials unlocked!");
+                  }}
+                  className={`flex-1 md:flex-none px-4 py-2 rounded-xl text-[10px] font-mono font-black tracking-widest uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
+                    userProfile.role === "president"
+                      ? "bg-indigo-500/20 border-indigo-500/50 text-indigo-300 shadow-[0_0_10px_rgba(99,102,241,0.15)]"
+                      : "bg-slate-950/60 border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <Crown className="w-3.5 h-3.5 text-amber-400" />
+                  <span>👑 PRESIDENT</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
-
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          {onUpdateProfile && (
-            <>
-              {/* MEMBER BUTTON */}
-              <button
-                id="sim-role-member"
-                onClick={() => {
-                  onUpdateProfile({ role: "member" });
-                  addTerminalLog("SIM_ROLE: Changed current access key down to [🌱 Member]");
-                  showTemporaryFeedback("Lowered access credentials to Club Member.");
-                }}
-                className={`flex-1 md:flex-none px-4 py-2 rounded-xl text-[10px] font-mono font-black tracking-widest uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
-                  userProfile.role === "member"
-                    ? "bg-pink-500/15 border-pink-500/50 text-pink-300 shadow-[0_0_10px_rgba(236,72,153,0.15)]"
-                    : "bg-slate-950/60 border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white"
-                }`}
-              >
-                <Users2 className="w-3.5 h-3.5" />
-                <span>🌱 MEMBER</span>
-              </button>
-
-              {/* CABINET BUTTON */}
-              <button
-                id="sim-role-cabinet"
-                onClick={() => {
-                  onUpdateProfile({ role: "cabinet" });
-                  addTerminalLog("SIM_ROLE: Escalated current access credentials to [🛡️ Cabinet Admin]");
-                  showTemporaryFeedback("Escalated credentials to Cabinet Member!");
-                }}
-                className={`flex-1 md:flex-none px-4 py-2 rounded-xl text-[10px] font-mono font-black tracking-widest uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
-                  userProfile.role === "cabinet"
-                    ? "bg-purple-500/20 border-purple-500/50 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.15)]"
-                    : "bg-slate-950/60 border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white"
-                }`}
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>🛡️ CABINET</span>
-              </button>
-
-              {/* PRESIDENT BUTTON */}
-              <button
-                id="sim-role-president"
-                onClick={() => {
-                  onUpdateProfile({ role: "president" });
-                  addTerminalLog("SIM_ROLE: Overloaded access permissions to overall superadmin [👑 President]");
-                  showTemporaryFeedback("Supreme Overlord Credentials unlocked!");
-                }}
-                className={`flex-1 md:flex-none px-4 py-2 rounded-xl text-[10px] font-mono font-black tracking-widest uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
-                  userProfile.role === "president"
-                    ? "bg-indigo-500/20 border-indigo-500/50 text-indigo-300 shadow-[0_0_10px_rgba(99,102,241,0.15)]"
-                    : "bg-slate-950/60 border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white"
-                }`}
-              >
-                <Crown className="w-3.5 h-3.5 text-amber-400" />
-                <span>👑 PRESIDENT</span>
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* Live State Action Feedback Toast Message */}
       {feedbackMessage && (
@@ -255,8 +262,12 @@ export default function Dashboard({ userProfile, onNavigateToTab, onLogout, onUp
         
         <div id="banner-flex" className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div id="banner-user-info" className="flex items-center gap-4">
-            <div id="user-avatar-badge" className="text-4xl p-3.5 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl flex items-center justify-center select-none">
-              {activeAvatarInfo.emoji}
+            <div id="user-avatar-badge" className="w-16 h-16 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl flex items-center justify-center select-none overflow-hidden shrink-0">
+              {userProfile.avatarSeed.startsWith("http") || userProfile.avatarSeed.startsWith("data:") ? (
+                <img src={userProfile.avatarSeed} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              ) : (
+                <span className="text-4xl">{activeAvatarInfo.emoji}</span>
+              )}
             </div>
             <div>
               <div id="school-tag" className="flex items-center gap-2 mb-1">
