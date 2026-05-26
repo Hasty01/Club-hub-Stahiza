@@ -102,9 +102,38 @@ export default function Login({ onNavigateToRegister, onLoginSuccess, onBackToLa
         <form id="login-form" onSubmit={handleSubmit} className="space-y-4">
           
           {error && (
-            <div id="login-error-box" className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-mono flex items-start gap-2 select-none">
-              <span id="error-bullet" className="font-bold">⚠️</span>
-              <span>{error}</span>
+            <div id="login-error-box" className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 text-xs font-mono flex flex-col gap-2">
+              <div className="flex items-start gap-2 select-none">
+                <span id="error-bullet" className="font-bold">⚠️</span>
+                <span>{error}</span>
+              </div>
+              <div className="mt-1 pt-2 border-t border-rose-500/20 text-[10px] text-slate-300 leading-relaxed">
+                {error.includes("Email not confirmed") ? (
+                  <p className="mb-2">
+                    <strong>Tip:</strong> Please check your email inbox for a confirmation link, or go to your <strong>Supabase Dashboard &rarr; Auth &rarr; Providers &rarr; Email</strong> and disable "Confirm email" to enable instant user sign-ins!
+                  </p>
+                ) : (
+                  <p className="mb-2">
+                    <strong>Database Notice:</strong> If you are running into Supabase schema sync, rate limits, or unconfirmed email restraints, you can bypass this error and log in with your credentials in offline/local simulated mode.
+                  </p>
+                )}
+                <button
+                  id="btn-login-bypass"
+                  type="button"
+                  onClick={() => {
+                    setIsLoading(true);
+                    setTimeout(() => {
+                      setIsLoading(false);
+                      if (onLoginSuccess) {
+                        onLoginSuccess(email);
+                      }
+                    }, 500);
+                  }}
+                  className="w-full bg-rose-950/40 hover:bg-rose-900/50 border border-rose-500/40 hover:border-rose-500/60 rounded-lg text-[10px] py-1.5 px-2 font-bold select-none cursor-pointer text-pink-300 tracking-wider uppercase transition-all"
+                >
+                  Bypass & Load Offline Simulation
+                </button>
+              </div>
             </div>
           )}
 

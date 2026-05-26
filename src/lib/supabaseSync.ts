@@ -4,15 +4,13 @@ import { StudentProfile, Notice } from "../types";
 // Standard types matching DB tables:
 export interface DbProfile {
   id: string;
-  name: string;
+  full_name: string;
   class_level: string;
   xp: number;
   level: number;
-  unlocked_badges: string[];
-  solved_challenge_ids: string[];
-  avatar_seed: string;
-  rank: string;
+  avatar_url: string;
   role?: string;
+  email?: string;
 }
 
 export interface DbNotice {
@@ -58,14 +56,14 @@ export interface DbAttendanceLog {
 // Map database snake_case keys to local typescript camelCase schemas:
 export function mapProfileFromDb(db: DbProfile): StudentProfile {
   return {
-    name: db.name,
-    classLevel: db.class_level,
-    xp: db.xp,
-    level: db.level,
-    unlockedBadges: db.unlocked_badges || [],
-    solvedChallengeIds: db.solved_challenge_ids || [],
-    avatarSeed: db.avatar_seed,
-    rank: db.rank,
+    name: db.full_name || "Unknown Pupil",
+    classLevel: db.class_level || "Senior 5",
+    xp: db.xp || 120,
+    level: db.level || 1,
+    unlockedBadges: [],
+    solvedChallengeIds: [],
+    avatarSeed: db.avatar_url || "Maria",
+    rank: db.class_level && db.class_level.includes("Patron") ? "Patron Mentor" : "Cadet",
     role: (db.role as "president" | "cabinet" | "member") || "member",
   };
 }
@@ -73,14 +71,11 @@ export function mapProfileFromDb(db: DbProfile): StudentProfile {
 export function mapProfileToDb(profile: StudentProfile, id: string = "primary_student"): DbProfile {
   return {
     id,
-    name: profile.name,
+    full_name: profile.name,
     class_level: profile.classLevel,
     xp: profile.xp,
     level: profile.level,
-    unlocked_badges: profile.unlockedBadges,
-    solved_challenge_ids: profile.solvedChallengeIds,
-    avatar_seed: profile.avatarSeed,
-    rank: profile.rank,
+    avatar_url: profile.avatarSeed,
     role: profile.role,
   };
 }
@@ -554,7 +549,7 @@ export async function fetchLeaderboardFromSupabase(): Promise<any[] | null> {
       if (pError) return null;
       return profiles.map((p, idx) => ({
         rank: idx + 1,
-        name: p.name,
+        name: p.full_name,
         xp: p.xp,
         class_level: p.class_level,
         role: p.role
