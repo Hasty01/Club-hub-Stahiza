@@ -37,6 +37,11 @@ export default function Register({ onNavigateToLogin, onRegisterSuccess, onBackT
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  const isDev = (import.meta as any).env?.DEV || 
+                window.location.hostname === "localhost" || 
+                window.location.hostname === "127.0.0.1" || 
+                window.location.hostname.includes("run.app");
+
   async function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -150,29 +155,31 @@ export default function Register({ onNavigateToLogin, onRegisterSuccess, onBackT
                 <p className="mb-2">
                   <strong>Database Tip:</strong> Supabase might have RLS policy restrictions, registration rate limits, or email confirmation enabled. You can either verify your email, toggle Providers configuration, or instantly register and log in to local simulated mode right now.
                 </p>
-                <button
-                  id="btn-register-bypass"
-                  type="button"
-                  onClick={() => {
-                    setIsLoading(true);
-                    setTimeout(() => {
-                      setIsLoading(false);
-                      if (onRegisterSuccess) {
-                        onRegisterSuccess(
-                          name || "Atamba Joel",
-                          email || "hastyjoel1@gmail.com",
-                          classLevel || "Senior 6",
-                          selectedAvatar || "Sandra",
-                          role || "president",
-                          true
-                        );
-                      }
-                    }, 500);
-                  }}
-                  className="w-full bg-rose-950/40 hover:bg-rose-900/50 border border-rose-500/40 hover:border-rose-500/60 rounded-lg text-[10px] py-1.5 px-2 font-bold select-none cursor-pointer text-pink-300 tracking-wider uppercase transition-all"
-                >
-                  Bypass & Register Locally (Offline Mode)
-                </button>
+                {isDev && (
+                  <button
+                    id="btn-register-bypass"
+                    type="button"
+                    onClick={() => {
+                      setIsLoading(true);
+                      setTimeout(() => {
+                        setIsLoading(false);
+                        if (onRegisterSuccess) {
+                          onRegisterSuccess(
+                            name || "Atamba Joel",
+                            email || "hastyjoel1@gmail.com",
+                            classLevel || "Senior 6",
+                            selectedAvatar || "Sandra",
+                            role || "president",
+                            true
+                          );
+                        }
+                      }, 500);
+                    }}
+                    className="w-full bg-rose-950/40 hover:bg-rose-900/50 border border-rose-500/40 hover:border-rose-500/60 rounded-lg text-[10px] py-1.5 px-2 font-bold select-none cursor-pointer text-pink-300 tracking-wider uppercase transition-all mt-1"
+                  >
+                    Bypass & Register Locally (Offline Mode)
+                  </button>
+                )}
               </div>
             </div>
           )}

@@ -14,6 +14,11 @@ export default function Login({ onNavigateToRegister, onLoginSuccess, onBackToLa
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  const isDev = (import.meta as any).env?.DEV || 
+                window.location.hostname === "localhost" || 
+                window.location.hostname === "127.0.0.1" || 
+                window.location.hostname.includes("run.app");
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -117,22 +122,24 @@ export default function Login({ onNavigateToRegister, onLoginSuccess, onBackToLa
                     <strong>Database Notice:</strong> If you are running into Supabase schema sync, rate limits, or unconfirmed email restraints, you can bypass this error and log in with your credentials in offline/local simulated mode.
                   </p>
                 )}
-                <button
-                  id="btn-login-bypass"
-                  type="button"
-                  onClick={() => {
-                    setIsLoading(true);
-                    setTimeout(() => {
-                      setIsLoading(false);
-                      if (onLoginSuccess) {
-                        onLoginSuccess(email, true);
-                      }
-                    }, 500);
-                  }}
-                  className="w-full bg-rose-950/40 hover:bg-rose-900/50 border border-rose-500/40 hover:border-rose-500/60 rounded-lg text-[10px] py-1.5 px-2 font-bold select-none cursor-pointer text-pink-300 tracking-wider uppercase transition-all"
-                >
-                  Bypass & Load Offline Simulation
-                </button>
+                {isDev && (
+                  <button
+                    id="btn-login-bypass"
+                    type="button"
+                    onClick={() => {
+                      setIsLoading(true);
+                      setTimeout(() => {
+                        setIsLoading(false);
+                        if (onLoginSuccess) {
+                          onLoginSuccess(email, true);
+                        }
+                      }, 500);
+                    }}
+                    className="w-full bg-rose-950/40 hover:bg-rose-900/50 border border-rose-500/40 hover:border-rose-500/60 rounded-lg text-[10px] py-1.5 px-2 font-bold select-none cursor-pointer text-pink-300 tracking-wider uppercase transition-all mt-1"
+                  >
+                    Bypass & Load Offline Simulation
+                  </button>
+                )}
               </div>
             </div>
           )}

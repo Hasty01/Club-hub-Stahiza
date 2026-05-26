@@ -65,6 +65,7 @@ export function mapProfileFromDb(db: DbProfile): StudentProfile {
     avatarSeed: db.avatar_url || "Maria",
     rank: db.class_level && db.class_level.includes("Patron") ? "Patron Mentor" : "Cadet",
     role: (db.role as "president" | "cabinet" | "member") || "member",
+    email: db.email,
   };
 }
 
@@ -77,12 +78,17 @@ export function mapProfileToDb(profile: StudentProfile, id: string = "primary_st
     level: profile.level,
     avatar_url: profile.avatarSeed,
     role: profile.role,
+    email: profile.email,
   };
 }
 
 // Profile CRUD operations safely:
 export async function fetchProfileFromSupabase(id: string = "primary_student"): Promise<StudentProfile | null> {
   if (!isSupabaseConfigured) return null;
+  // If the id is not a valid UUID, return null directly to prevent syntax errors
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    return null;
+  }
   try {
     const { data, error } = await supabase
       .from("profiles")
@@ -101,8 +107,32 @@ export async function fetchProfileFromSupabase(id: string = "primary_student"): 
   }
 }
 
+export async function fetchProfileByEmail(email: string): Promise<StudentProfile | null> {
+  if (!isSupabaseConfigured) return null;
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Supabase Profile Fetch by Email Error:", error);
+      return null;
+    }
+    return data ? mapProfileFromDb(data) : null;
+  } catch (err) {
+    console.error("Supabase Profile Fetch by Email Exception:", err);
+    return null;
+  }
+}
+
 export async function saveProfileToSupabase(profile: StudentProfile, id: string = "primary_student"): Promise<boolean> {
   if (!isSupabaseConfigured) return false;
+  // Only save if the id is a valid UUID
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    return false;
+  }
   try {
     const dbProfile = mapProfileToDb(profile, id);
     const { error } = await supabase

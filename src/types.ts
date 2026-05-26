@@ -14,6 +14,7 @@ export interface StudentProfile {
   avatarSeed: string; // e.g., "Felix", "CodeNinja"
   rank: string;
   role: "president" | "cabinet" | "member";
+  email?: string;
 }
 
 export interface Quest {

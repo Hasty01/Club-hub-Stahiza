@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { StudentProfile } from "./types";
 import { TOP_MEMBERS, INITIAL_EVENTS, AVATAR_PRESETS } from "./data";
 import { supabase, isSupabaseConfigured } from "./lib/supabaseClient";
-import { fetchProfileFromSupabase, saveProfileToSupabase } from "./lib/supabaseSync";
+import { fetchProfileFromSupabase, saveProfileToSupabase, fetchProfileByEmail } from "./lib/supabaseSync";
 import { useAuth } from "./context/AuthContext";
 import { 
   Shield, 
@@ -224,20 +224,35 @@ export default function App() {
     }));
   };
 
-  const handleLoginSuccess = (email: string, bypassed: boolean = false) => {
-    const cleanName = email.split("@")[0]
-      .replace(/[^a-zA-Z0-9]/g, " ")
-      .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-
-    setUserProfile((prev) => ({
-      ...prev,
-      name: cleanName || prev.name,
-    }));
+  const handleLoginSuccess = async (email: string, bypassed: boolean = false) => {
     setIsBypassed(bypassed);
     localStorage.setItem("stahizza_bypass", bypassed ? "true" : "false");
-    handleGrantXp(10, bypassed ? "Bypassed securely to local workspace!" : "Workspace Access Credentials authenticated!");
+
+    let loadedProfile: StudentProfile | null = null;
+    if (isSupabaseConfigured) {
+      loadedProfile = await fetchProfileByEmail(email);
+    }
+
+    if (loadedProfile) {
+      setUserProfile(loadedProfile);
+      handleGrantXp(10, bypassed ? "Loaded real cloud profile via offline bypass!" : "Cloud profile matched & synchronized!");
+    } else {
+      const cleanName = email.split("@")[0]
+        .replace(/[^a-zA-Z0-9]/g, " ")
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+
+      setUserProfile((prev) => ({
+        ...prev,
+        name: cleanName || prev.name,
+        classLevel: "Senior 6",
+        role: "member",
+        email: email
+      }));
+      handleGrantXp(10, bypassed ? "Bypassed securely to local workspace!" : "Workspace Access Credentials authenticated!");
+    }
+
     setCurrentScreen("app");
     setActiveTab("dashboard");
   };
@@ -252,7 +267,8 @@ export default function App() {
       solvedChallengeIds: [],
       avatarSeed,
       rank: classLevel.includes("Patron") ? "Patron Mentor" : "Cadet",
-      role
+      role,
+      email
     });
     setIsBypassed(bypassed);
     localStorage.setItem("stahizza_bypass", bypassed ? "true" : "false");
