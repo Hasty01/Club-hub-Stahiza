@@ -33,3 +33,97 @@
   --color-slate-900: #0a192f; /* Deep Navy Blue container */
   --color-slate-950: #040d1a; /* Absolute Dark Navy Blue background canvas */
 }
+
+/* Global Light Theme System overrides */
+html.light,
+:root.light {
+  --color-slate-950: #f8fafc; /* light background canvas */
+  --color-slate-900: #ffffff; /* pure white for cards and sidebars */
+  --color-slate-850: #f1f5f9; /* light border / accent backgrounds */
+  --color-slate-800: #e2e8f0; /* light separation borders */
+  --color-slate-750: #cbd5e1; /* medium grey borders */
+  --color-slate-700: #94a3b8; /* text slate description */
+  --color-slate-650: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-500: #334155;
+  --color-slate-400: #1e293b;
+  --color-slate-350: #0f172a;
+  --color-slate-300: #0f172a;
+  --color-slate-200: #0d1527;
+  --color-slate-100: #090e1a;
+  --color-slate-50: #050810;
+
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+html.light body {
+  background-color: #f8fafc !important;
+}
+
+/* Support specific dark-themed hardcoded backgrounds in component wrappers */
+html.light .bg-\[\#070A13\],
+html.light .bg-\[\#0B1220\],
+html.light .bg-\[\#0A111E\],
+html.light .bg-slate-950 {
+  background-color: #f8fafc !important;
+}
+
+html.light .bg-\[\#0B1220\]\/40 {
+  background-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+html.light .bg-\[\#0B1220\]\/20 {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+html.light .bg-\[\#0B1220\]\/95 {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+html.light aside,
+html.light header,
+html.light .bg-slate-900 {
+  background-color: #ffffff !important;
+}
+
+html.light .border-slate-800,
+html.light .border-slate-850,
+html.light .border-slate-900,
+html.light .border-slate-900\/60,
+html.light .border-slate-900\/80 {
+  border-color: #e2e8f0 !important;
+}
+
+html.light .text-slate-100 {
+  color: #0f172a !important;
+}
+
+html.light .text-slate-200,
+html.light .text-slate-300 {
+  color: #1e293b !important;
+}
+
+html.light .text-slate-400,
+html.light .text-slate-500 {
+  color: #475569 !important;
+}
+
+html.light .bg-slate-950\/60,
+html.light .bg-slate-950\/40,
+html.light .bg-slate-955 {
+  background-color: #f1f5f9 !important;
+}
+
+html.light input,
+html.light textarea,
+html.light select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #94a3b8 !important;
+}

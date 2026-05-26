@@ -32,7 +32,9 @@ import {
   Gamepad2,
   Rss,
   User,
-  AlertCircle
+  AlertCircle,
+  Sun,
+  Moon
 } from "lucide-react";
 
 // Import modular subcomponents safely
@@ -112,6 +114,20 @@ export default function App() {
   });
 
   const [levelUpMessage, setLevelUpMessage] = useState<string | null>(null);
+
+  const [theme, setTheme] = useState<"dark" | "light">(() => {
+    const saved = localStorage.getItem("theme");
+    return (saved === "light" || saved === "dark") ? saved : "dark";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("theme", theme);
+    if (theme === "light") {
+      document.documentElement.classList.add("light");
+    } else {
+      document.documentElement.classList.remove("light");
+    }
+  }, [theme]);
 
   const [leaderboard, setLeaderboard] = useState<any[]>([
     { name: "Kyobe Arthur", xp: 1980 },
@@ -368,22 +384,35 @@ export default function App() {
         </button>
 
         {/* Sidebar Header Brand Area */}
-        <div className={`p-4 border-b border-slate-900/60 flex items-center gap-3 ${sidebarCollapsed ? "justify-center" : ""}`}>
-          <div className="w-9 h-9 bg-pink-500/15 border border-pink-500/30 rounded-xl flex items-center justify-center shrink-0">
-            <span className="font-extrabold text-pink-400 text-xs font-sans tracking-wide">ICH</span>
-          </div>
-          {!sidebarCollapsed && (
-            <div className="animate-fadeIn truncate">
-              <div className="flex items-center gap-1">
-                <h1 className="font-sans font-extrabold text-[12px] tracking-tight text-slate-100 uppercase">
-                  STAHIZZA Hub
-                </h1>
-                <span className="text-[8px] font-mono bg-pink-500/10 border border-pink-500/20 text-pink-400 px-1 py-0.1 select-none rounded font-bold">
-                  PRO
-                </span>
-              </div>
-              <p className="text-[9px] font-mono text-slate-500">Standard High High School Zzana</p>
+        <div className={`p-4 border-b border-slate-900/60 flex items-center justify-between gap-3 ${sidebarCollapsed ? "justify-center" : ""}`}>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-pink-500/15 border border-pink-500/30 rounded-xl flex items-center justify-center shrink-0">
+              <span className="font-extrabold text-pink-400 text-xs font-sans tracking-wide">ICH</span>
             </div>
+            {!sidebarCollapsed && (
+              <div className="animate-fadeIn truncate">
+                <div className="flex items-center gap-1">
+                  <h1 className="font-sans font-extrabold text-[12px] tracking-tight text-slate-100 uppercase">
+                    STAHIZZA Hub
+                  </h1>
+                  <span className="text-[8px] font-mono bg-pink-500/10 border border-pink-500/20 text-pink-400 px-1 py-0.1 select-none rounded font-bold">
+                    PRO
+                  </span>
+                </div>
+                <p className="text-[9px] font-mono text-slate-500">Standard High High School Zzana</p>
+              </div>
+            )}
+          </div>
+          
+          {/* Theme Toggle Button */}
+          {!sidebarCollapsed && (
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="w-8 h-8 rounded-lg bg-slate-900/50 hover:bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0"
+              title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {theme === "dark" ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-400" />}
+            </button>
           )}
         </div>
 
@@ -465,7 +494,14 @@ export default function App() {
               <p className="text-[8px] text-slate-600 mt-0.5">STAHIZZA ICT Club Hub OS v4.2</p>
             </div>
           ) : (
-            <div className="flex justify-center">
+            <div className="flex flex-col items-center gap-3">
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="w-8 h-8 rounded-lg bg-slate-900/50 hover:bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0"
+                title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              >
+                {theme === "dark" ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-400" />}
+              </button>
               <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" title="Systems online" />
             </div>
           )}
@@ -561,6 +597,13 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-[#1e293b] flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer"
+              title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {theme === "dark" ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-400" />}
+            </button>
             <span className="text-lg bg-slate-900 w-7 h-7 rounded-lg flex items-center justify-center border border-[#1e293b] overflow-hidden">
               {userProfile.avatarSeed.startsWith("http") || userProfile.avatarSeed.startsWith("data:") ? (
                 <img src={userProfile.avatarSeed} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
