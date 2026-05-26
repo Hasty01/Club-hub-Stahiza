@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Notice, StudentProfile } from "../types";
-import { INITIAL_NOTICES } from "../data";
 import { MessageSquare, Heart, Pin, Send, PlusCircle, Megaphone, HelpCircle, Loader2 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "../lib/supabaseClient";
 import { fetchNoticesFromSupabase, saveNoticeToSupabase, incrementNoticeLikesInSupabase } from "../lib/supabaseSync";
@@ -10,13 +9,50 @@ interface NoticeBoardProps {
   onGrantXp: (amount: number, reason: string) => void;
 }
 
-export default function NoticeBoard({ userProfile, onGrantXp }: NoticeBoardProps) {
-  const [notices, setNotices] = useState<Notice[]>(isSupabaseConfigured ? [] : INITIAL_NOTICES);
-  const [newNoticeText, setNewNoticeText] = useState("");
-  const [submissionRole, setSubmissionRole] = useState("Student"); // "Student", "Patron", "President"
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [dbLoading, setDbLoading] = useState(false);
+export default function NoticeBoard({
+  userProfile,
+  onGrantXp
+}: NoticeBoardProps) {
 
+  const [notices, setNotices] =
+    useState<Notice[]>([]);
+
+  const [newNoticeText, setNewNoticeText] =
+    useState("");
+
+  const [submissionRole, setSubmissionRole] =
+    useState("Student");
+
+  const [isFormOpen, setIsFormOpen] =
+    useState(false);
+
+  const [dbLoading, setDbLoading] =
+    useState(false);
+
+  useEffect(() => {
+    fetchNotices();
+  }, []);
+
+  async function fetchNotices() {
+
+    const { data, error } =
+      await supabase
+        .from("club_feed")
+        .select("*")
+        .order("created_at", {
+          ascending: false,
+        });
+
+    if (error) {
+      console.log(
+        "Supabase Notices Fetch Error:",
+        error
+      );
+      return;
+    }
+
+    setNotices(data || []);
+  }
   // Sync notice post role dynamically with Simulated system role
   useEffect(() => {
     if (userProfile.role === "president") {
