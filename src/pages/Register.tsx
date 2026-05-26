@@ -86,11 +86,15 @@ export default function Register({ onNavigateToLogin, onRegisterSuccess, onBackT
           .from("profiles")
           .insert({
             id: data.user.id,
-            full_name: name,
-            email: email,
+            name: name,
             class_level: classLevel,
-            avatar_url: selectedAvatar,
+            avatar_seed: selectedAvatar,
             role: role,
+            xp: 120,
+            level: 1,
+            unlocked_badges: ["Starter Bit"],
+            solved_challenge_ids: [],
+            rank: classLevel.includes("Patron") ? "Patron Mentor" : "Cadet",
           });
 
         if (profileError) {
