@@ -280,7 +280,7 @@ export const TOP_MEMBERS: StudentProfile[] = [
     level: 12,
     unlockedBadges: ["Web Dev", "UNEB Ace", "Club Hero", "Fast Coder"],
     solvedChallengeIds: ["c-1", "c-2"],
-    avatarSeed: "Felix",
+    avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
     rank: "President",
     role: "president"
   },
@@ -291,7 +291,7 @@ export const TOP_MEMBERS: StudentProfile[] = [
     level: 10,
     unlockedBadges: ["Data Master", "Code Ninja"],
     solvedChallengeIds: ["c-1"],
-    avatarSeed: "CodeNinja",
+    avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
     rank: "Systems VP",
     role: "cabinet"
   },
@@ -302,7 +302,7 @@ export const TOP_MEMBERS: StudentProfile[] = [
     level: 9,
     unlockedBadges: ["Design Scholar", "CSS Artist"],
     solvedChallengeIds: ["c-1", "c-2"],
-    avatarSeed: "Maria",
+    avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
     rank: "Senior Rep",
     role: "member"
   },
@@ -313,18 +313,8 @@ export const TOP_MEMBERS: StudentProfile[] = [
     level: 8,
     unlockedBadges: ["Binary Pro", "Math Wizard"],
     solvedChallengeIds: ["c-1"],
-    avatarSeed: "Felix",
+    avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80",
     rank: "Game Anchor",
     role: "member"
   }
-];
-
-// List of fun, colorful African-relevant educational avatars or codes
-export const AVATAR_PRESETS = [
-  { id: "Mwenya", emoji: "✊🏽", label: "Tech Champion" },
-  { id: "Maria", emoji: "👩🏾‍💻", label: "Dev Scholar" },
-  { id: "Felix", emoji: "👨🏾‍💻", label: "Problem Solver" },
-  { id: "CodeNinja", emoji: "🧠", label: "Systems Guru" },
-  { id: "Sandra", emoji: "✨", label: "Visual Creator" },
-  { id: "Kato", emoji: "🦁", label: "Bit Blazer" }
 ];

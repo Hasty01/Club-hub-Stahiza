@@ -4,7 +4,15 @@ import { supabase } from "../lib/supabaseClient";
 
 interface RegisterProps {
   onNavigateToLogin?: () => void;
-  onRegisterSuccess?: (name: string, email: string, classLevel: string, avatarSeed: string, role: "president" | "cabinet" | "member", bypassed?: boolean) => void;
+  onRegisterSuccess?: (
+    name: string,
+    email: string,
+    classLevel: string,
+    avatarSeed: string,
+    role: "president" | "cabinet" | "member",
+    username?: string,
+    bio?: string
+  ) => void;
   onBackToLanding?: () => void;
 }
 
@@ -34,16 +42,10 @@ export default function Register({ onNavigateToLogin, onRegisterSuccess, onBackT
   const [classLevel, setClassLevel] = useState("Senior 5");
   const [selectedAvatar, setSelectedAvatar] = useState("Maria");
   const [role, setRole] = useState<"president" | "cabinet" | "member">("member");
+  const [username, setUsername] = useState("");
+  const [bio, setBio] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
-  const isEmailAdminRegister = email.toLowerCase().trim() === "hastyjoel1@gmail.com";
-
-  React.useEffect(() => {
-    if (role === "president" && !isEmailAdminRegister) {
-      setRole("member");
-    }
-  }, [email, role, isEmailAdminRegister]);
 
   const isDev = (import.meta as any).env?.DEV || 
                 window.location.hostname === "localhost" || 
@@ -55,13 +57,24 @@ export default function Register({ onNavigateToLogin, onRegisterSuccess, onBackT
     setError(null);
 
     // Initial validations
-    if (!name.trim() || !email.trim() || !password.trim()) {
-      setError("Please fill in all standard validation fields.");
+    if (!name.trim() || !email.trim() || !password.trim() || !username.trim()) {
+      setError("Please fill in all standard validation fields, including a unique username.");
       return;
     }
 
     if (name.length < 3) {
       setError("Your student name must be at least 3 characters.");
+      return;
+    }
+
+    if (username.trim().length < 3) {
+      setError("Your unique username must be at least 3 characters long.");
+      return;
+    }
+
+    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+    if (!usernameRegex.test(username.trim())) {
+      setError("Your username can only contain letters, numbers, and underscores.");
       return;
     }
 
@@ -94,15 +107,15 @@ export default function Register({ onNavigateToLogin, onRegisterSuccess, onBackT
 
       console.log("User created:", data);
 
-      if (data.user) {
-        const generatedUsername = email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "").toLowerCase() + Math.floor(Math.random() * 900 + 100);
+      const cleanUsername = username.trim().toLowerCase();
 
+      if (data.user) {
         const { error: profileError } = await supabase
           .from("profiles")
           .upsert({
             id: data.user.id,
             full_name: name,
-            username: generatedUsername,
+            username: cleanUsername,
             class_level: classLevel,
             avatar_seed: selectedAvatar,
             avatar_url: selectedAvatar,
@@ -111,7 +124,7 @@ export default function Register({ onNavigateToLogin, onRegisterSuccess, onBackT
             level: 1,
             email: email,
             streak: 0,
-            bio: "",
+            bio: bio.trim(),
             badges: [],
           });
 
@@ -124,7 +137,7 @@ export default function Register({ onNavigateToLogin, onRegisterSuccess, onBackT
 
       // Successfully authenticated/created account
       if (onRegisterSuccess) {
-        onRegisterSuccess(name, email, classLevel, selectedAvatar, role);
+        onRegisterSuccess(name, email, classLevel, selectedAvatar, role, cleanUsername, bio.trim());
       }
     } catch (err: any) {
       console.log(err.message || err);
@@ -167,34 +180,9 @@ export default function Register({ onNavigateToLogin, onRegisterSuccess, onBackT
                 <span>{error}</span>
               </div>
               <div className="mt-1 pt-2 border-t border-rose-500/20 text-[10px] text-slate-300 leading-relaxed">
-                <p className="mb-2">
-                  <strong>Database Tip:</strong> Supabase might have RLS policy restrictions, registration rate limits, or email confirmation enabled. You can either verify your email, toggle Providers configuration, or instantly register and log in to local simulated mode right now.
+                <p>
+                  <strong>Database Tip:</strong> If registration fails, make sure your email format is valid and your Chosen local passcode is 5 indices/characters or more. Also verify Supabase credentials configuration in your .env setup.
                 </p>
-                {isDev && (
-                  <button
-                    id="btn-register-bypass"
-                    type="button"
-                    onClick={() => {
-                      setIsLoading(true);
-                      setTimeout(() => {
-                        setIsLoading(false);
-                        if (onRegisterSuccess) {
-                          onRegisterSuccess(
-                            name || "Atamba Joel",
-                            email || "hastyjoel1@gmail.com",
-                            classLevel || "Senior 6",
-                            selectedAvatar || "Sandra",
-                            role || "president",
-                            true
-                          );
-                        }
-                      }, 500);
-                    }}
-                    className="w-full bg-rose-950/40 hover:bg-rose-900/50 border border-rose-500/40 hover:border-rose-500/60 rounded-lg text-[10px] py-1.5 px-2 font-bold select-none cursor-pointer text-pink-300 tracking-wider uppercase transition-all mt-1"
-                  >
-                    Bypass & Register Locally (Offline Mode)
-                  </button>
-                )}
               </div>
             </div>
           )}
@@ -241,28 +229,24 @@ export default function Register({ onNavigateToLogin, onRegisterSuccess, onBackT
             </div>
           </div>
 
-          <div id="grid-class-password" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div id="class-field-container">
-              <label id="label-class" className="block text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-1.5 font-bold">
-                UNEB Syllabus Class
+          <div id="grid-username-password" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div id="username-field-container">
+              <label id="label-username" className="block text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-1.5 font-bold">
+                Unique Club Username
               </label>
-              <div id="input-class-wrapper" className="relative">
-                <div id="icon-book-container" className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                  <BookOpen id="icon-book" className="w-4 h-4" />
+              <div id="input-username-wrapper" className="relative">
+                <div id="icon-terminal-container" className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                  <Terminal id="icon-username-terminal" className="w-4 h-4" />
                 </div>
-                <select
-                  id="input-class"
-                  value={classLevel}
-                  onChange={(e) => setClassLevel(e.target.value)}
-                  className="w-full bg-slate-950/80 border border-slate-800 focus:border-pink-500/60 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-100 outline-none transition-all appearance-none cursor-pointer"
+                <input
+                  id="input-username"
+                  type="text"
+                  placeholder="e.g., joel_dev"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full bg-slate-950/80 border border-slate-800 focus:border-pink-500/60 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-100 placeholder-slate-600 outline-none transition-all"
                   disabled={isLoading}
-                >
-                  {CLASS_OPTIONS.map((level) => (
-                    <option key={level} value={level} className="bg-slate-950 text-slate-100">
-                      {level}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
             </div>
 
@@ -287,6 +271,52 @@ export default function Register({ onNavigateToLogin, onRegisterSuccess, onBackT
             </div>
           </div>
 
+          <div id="grid-class-bio" className="grid grid-cols-1 gap-4">
+            <div id="class-field-container">
+              <label id="label-class" className="block text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-1.5 font-bold">
+                UNEB Syllabus Class
+              </label>
+              <div id="input-class-wrapper" className="relative">
+                <div id="icon-book-container" className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                  <BookOpen id="icon-book" className="w-4 h-4" />
+                </div>
+                <select
+                  id="input-class"
+                  value={classLevel}
+                  onChange={(e) => setClassLevel(e.target.value)}
+                  className="w-full bg-slate-950/80 border border-slate-800 focus:border-pink-500/60 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-100 outline-none transition-all appearance-none cursor-pointer"
+                  disabled={isLoading}
+                >
+                  {CLASS_OPTIONS.map((level) => (
+                    <option key={level} value={level} className="bg-slate-950 text-slate-100">
+                      {level}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div id="bio-field-container">
+              <label id="label-bio" className="block text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-1.5 font-bold">
+                Biographical info / Tech Interests (BIO)
+              </label>
+              <div id="input-bio-wrapper" className="relative">
+                <div id="icon-badge-info-container" className="absolute top-2.5 left-3.5 flex items-start pointer-events-none text-slate-500">
+                  <BadgeInfo id="icon-badge-bio" className="w-4 h-4" />
+                </div>
+                <textarea
+                  id="input-bio"
+                  placeholder="Tell us about yourself (e.g., Passionate about algorithms, frontend enthusiast)"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  rows={2}
+                  className="w-full bg-slate-950/80 border border-slate-800 focus:border-pink-500/60 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-100 placeholder-slate-600 outline-none transition-all resize-none"
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Role selection visual panel */}
           <div id="role-field-container" className="pt-2 border-t border-slate-800/40 mt-2">
             <label id="label-role" className="block text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-2 font-bold flex items-center gap-1.5">
@@ -294,7 +324,7 @@ export default function Register({ onNavigateToLogin, onRegisterSuccess, onBackT
               <span className="text-[8px] bg-pink-500/10 text-pink-400 border border-pink-500/20 px-1 py-0.2 rounded font-extrabold uppercase">REQUIRED</span>
             </label>
 
-            <div id="role-choices-grid" className={`grid grid-cols-1 ${isEmailAdminRegister ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-2`}>
+            <div id="role-choices-grid" className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {/* Normal Member */}
               <button
                 key="choice-member"
@@ -328,25 +358,6 @@ export default function Register({ onNavigateToLogin, onRegisterSuccess, onBackT
                 <span className="text-[10px] font-bold tracking-tight font-sans">Cabinet Member</span>
                 <span className="text-[8px] font-mono text-slate-500 uppercase">Admin / Elite</span>
               </button>
-
-              {/* Club President */}
-              {isEmailAdminRegister && (
-                <button
-                  key="choice-president"
-                  id="role-btn-president"
-                  type="button"
-                  onClick={() => setRole("president")}
-                  className={`flex flex-col items-center justify-center p-3 rounded-xl border cursor-pointer transition-all gap-1.5 text-center ${
-                    role === "president"
-                      ? "bg-indigo-500/15 border-indigo-500 text-indigo-300 shadow-[0_0_15px_rgba(99,102,241,0.1)]"
-                      : "bg-slate-950/50 border-slate-800/80 text-slate-400 hover:border-slate-700/80"
-                  }`}
-                >
-                  <Crown className="w-5 h-5 text-amber-400" />
-                  <span className="text-[10px] font-bold tracking-tight font-sans">Club President</span>
-                  <span className="text-[8px] font-mono text-slate-500 uppercase">Overall Access</span>
-                </button>
-              )}
             </div>
 
             {/* Quick descriptive summary box of selected role authorization */}

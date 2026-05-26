@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import { Users2, Award, ShieldAlert, Sparkles, MessageCircle, Heart, UserPlus, Star } from "lucide-react";
+import { Users2, Award, ShieldAlert, Sparkles, MessageCircle, Heart, UserPlus, Star, User } from "lucide-react";
 import { StudentProfile } from "../types";
-import { AVATAR_PRESETS } from "../data";
 
 interface CommunityHubProps {
   userProfile: StudentProfile;
@@ -17,18 +16,18 @@ export default function CommunityHub({ userProfile, onGrantXp }: CommunityHubPro
     bio: "Recreated the STAHIZZA ICT Club Hub with premium dark appearance and interactive modules. Enthusiastic about databases, API designs, and React.",
     xp: 2840,
     contributions: 31,
-    avatar: "Felix",
+    avatarUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
     tags: ["React Developer", "UI Designer", "DB Administrator"]
   });
 
   const [activeTeamCode, setActiveTeamCode] = useState<string | null>(null);
   
   const communityMembers = [
-    { name: "Jerome K. Maku", role: "S5 Leader / President", xp: 2450, contributions: 25, isLive: true, avatar: "Felix" },
-    { name: "Kyobe Arthur", role: "S6 Rep / Systems VP", xp: 1980, contributions: 18, isLive: false, avatar: "CodeNinja" },
-    { name: "Nabulo Maria", role: "S3 Rep / Design Scholar", xp: 1850, contributions: 22, isLive: true, avatar: "Maria" },
-    { name: "Hakim Kavuma", role: "S6 Student / Cadet", xp: 1210, contributions: 12, isLive: false, avatar: "Sandra" },
-    { name: "Namazzi Sandra", role: "S2 Rep / Visual Creator", xp: 950, contributions: 9, isLive: false, avatar: "Sandra" }
+    { name: "Jerome K. Maku", role: "S5 Leader / President", xp: 2450, contributions: 25, isLive: true, avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" },
+    { name: "Kyobe Arthur", role: "S6 Rep / Systems VP", xp: 1980, contributions: 18, isLive: false, avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80" },
+    { name: "Nabulo Maria", role: "S3 Rep / Design Scholar", xp: 1850, contributions: 22, isLive: true, avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80" },
+    { name: "Hakim Kavuma", role: "S6 Student / Cadet", xp: 1210, contributions: 12, isLive: false, avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80" },
+    { name: "Namazzi Sandra", role: "S2 Rep / Visual Creator", xp: 950, contributions: 9, isLive: false, avatarUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80" }
   ];
 
   const handleFollow = (name: string) => {
@@ -119,20 +118,23 @@ export default function CommunityHub({ userProfile, onGrantXp }: CommunityHubPro
 
           <div className="divide-y divide-slate-800">
             {communityMembers.map((member, idx) => {
-              const avatarPreset = AVATAR_PRESETS.find(a => a.id === member.avatar) || AVATAR_PRESETS[0];
               const followed = !!hasFollowed[member.name];
               return (
                 <div key={idx} className="py-3 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <span className="text-xl bg-slate-950 w-9 h-9 rounded-xl flex items-center justify-center border border-slate-800 shrink-0 relative">
-                      {avatarPreset.emoji}
+                    <div className="w-9 h-9 rounded-xl bg-slate-950 border border-slate-800 shrink-0 relative flex items-center justify-center overflow-hidden">
+                      {member.avatarUrl ? (
+                        <img src={member.avatarUrl} className="w-full h-full object-cover" alt={member.name} referrerPolicy="no-referrer" />
+                      ) : (
+                        <User className="w-4 h-4 text-slate-400" />
+                      )}
                       {member.isLive && (
-                        <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                        <span className="absolute top-0.5 right-0.5 flex h-2 w-2 z-10">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
                           <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
                         </span>
                       )}
-                    </span>
+                    </div>
                     <div>
                       <p className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
                         {member.name}

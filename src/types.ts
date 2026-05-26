@@ -11,7 +11,7 @@ export interface StudentProfile {
   level: number;
   unlockedBadges: string[];
   solvedChallengeIds: string[];
-  avatarSeed: string; // e.g., "Felix", "CodeNinja" / custom URL
+  avatarUrl: string; // e.g., custom URL
   rank: string;
   role: "president" | "cabinet" | "member";
   email?: string;

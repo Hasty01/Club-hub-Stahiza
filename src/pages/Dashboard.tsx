@@ -25,9 +25,9 @@ import {
   Activity,
   Trash2,
   Key,
-  ShieldCheck
+  ShieldCheck,
+  User
 } from "lucide-react";
-import { AVATAR_PRESETS } from "../data";
 
 interface DashboardProps {
   userProfile: StudentProfile;
@@ -37,8 +37,6 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ userProfile, onNavigateToTab, onLogout, onUpdateProfile }: DashboardProps) {
-  const activeAvatarInfo = AVATAR_PRESETS.find(a => a.id === userProfile.avatarSeed) || AVATAR_PRESETS[0];
-
   // Calculate percentages
   const levelFloorXp = (userProfile.level - 1) * 300;
   const xpInCurrentLevel = userProfile.xp - levelFloorXp;
@@ -260,10 +258,10 @@ export default function Dashboard({ userProfile, onNavigateToTab, onLogout, onUp
         <div id="banner-flex" className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div id="banner-user-info" className="flex items-center gap-4">
             <div id="user-avatar-badge" className="w-16 h-16 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl flex items-center justify-center select-none overflow-hidden shrink-0">
-              {userProfile.avatarSeed.startsWith("http") || userProfile.avatarSeed.startsWith("data:") ? (
-                <img src={userProfile.avatarSeed} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              {userProfile.avatarUrl ? (
+                <img src={userProfile.avatarUrl} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
               ) : (
-                <span className="text-4xl">{activeAvatarInfo.emoji}</span>
+                <User className="w-8 h-8 text-slate-400" />
               )}
             </div>
             <div>

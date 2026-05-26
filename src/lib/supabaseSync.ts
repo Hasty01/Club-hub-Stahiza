@@ -9,7 +9,6 @@ export interface DbProfile {
   xp: number;
   level: number;
   avatar_url: string;
-  avatar_seed?: string;
   role?: string;
   email?: string;
   username?: string;
@@ -67,7 +66,7 @@ export function mapProfileFromDb(db: DbProfile): StudentProfile {
     level: db.level || 1,
     unlockedBadges: db.badges || [],
     solvedChallengeIds: [],
-    avatarSeed: db.avatar_seed || db.avatar_url || "Maria",
+    avatarUrl: db.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
     rank: db.class_level && db.class_level.includes("Patron") ? "Patron Mentor" : "Cadet",
     role: (db.role as "president" | "cabinet" | "member") || "member",
     email: db.email,
@@ -84,8 +83,7 @@ export function mapProfileToDb(profile: StudentProfile, id: string = "primary_st
     class_level: profile.classLevel,
     xp: profile.xp,
     level: profile.level,
-    avatar_url: profile.avatarSeed,
-    avatar_seed: profile.avatarSeed,
+    avatar_url: profile.avatarUrl,
     role: profile.role,
     email: profile.email,
     badges: profile.unlockedBadges || [],

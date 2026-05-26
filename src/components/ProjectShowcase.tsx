@@ -17,7 +17,7 @@ const PRESET_THUMBNAILS = [
 ];
 
 export default function ProjectShowcase({ userProfile, onGrantXp }: ProjectShowcaseProps) {
-  const [projects, setProjects] = useState<ShowcaseProject[]>(INITIAL_PROJECTS);
+  const [projects, setProjects] = useState<ShowcaseProject[]>(isSupabaseConfigured ? [] : INITIAL_PROJECTS);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
   const [dbLoading, setDbLoading] = useState(false);
@@ -249,74 +249,111 @@ export default function ProjectShowcase({ userProfile, onGrantXp }: ProjectShowc
       )}
 
       {/* Grid Portfolio Output */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProjects.map((proj) => (
-          <div
-            key={proj.id}
-            className="group/card bg-slate-900 border border-slate-800 hover:border-slate-750 rounded-2xl overflow-hidden flex flex-col transition-all shadow-lg hover:shadow-xl"
-          >
-            {/* Visual Header Grid wrapper */}
-            <div className="aspect-video relative overflow-hidden bg-slate-950">
-              <img
-                src={proj.thumbnailUrl}
-                alt={proj.title}
-                referrerPolicy="no-referrer"
-                className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-500"
-              />
-              <span className="absolute top-3 left-3 px-2 py-0.5 rounded text-[9px] font-mono font-medium tracking-wider uppercase bg-slate-950/80 text-indigo-400 border border-slate-800">
-                {proj.category}
-              </span>
+      {dbLoading ? (
+        <div id="project-skeletons-container" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={`project-skeleton-${i}`}
+              id={`project-skeleton-${i}`}
+              className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col animate-pulse"
+            >
+              {/* Visual aspect ratios skeleton */}
+              <div id={`project-skeleton-thumbnail-${i}`} className="aspect-video bg-slate-800 w-full" />
+              
+              <div id={`project-skeleton-details-${i}`} className="p-4 flex-1 flex flex-col justify-between space-y-4">
+                <div className="space-y-2">
+                  <div className="h-4 w-2/3 bg-slate-800 rounded-md" />
+                  <div className="h-3 w-1/2 bg-slate-850 rounded-md" />
+                  <div className="space-y-1.5 pt-1.5">
+                    <div className="h-3 w-full bg-slate-800 rounded" />
+                    <div className="h-3 w-[85%] bg-slate-800 rounded" />
+                  </div>
+                </div>
+
+                <div className="flex gap-1.5 pt-1">
+                  <div className="h-4 w-12 bg-slate-850 rounded" />
+                  <div className="h-4 w-14 bg-slate-850 rounded" />
+                  <div className="h-4 w-10 bg-slate-850 rounded" />
+                </div>
+
+                <div className="flex justify-between items-center border-t border-slate-850 pt-3">
+                  <div className="h-3.5 w-16 bg-slate-850/80 rounded" />
+                  <div className="h-3.5 w-24 bg-slate-850/80 rounded" />
+                </div>
+              </div>
             </div>
-
-            {/* Content particulars */}
-            <div className="p-4 flex-1 flex flex-col justify-between space-y-3.5 select-text">
-              <div className="space-y-1.5">
-                <h4 className="font-sans font-semibold text-slate-200 text-sm leading-tight select-text">
-                  {proj.title}
-                </h4>
-                <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400">
-                  <span>Created by:</span>
-                  <span className="text-slate-300 font-medium">{proj.developer}</span>
-                  <span className="text-slate-500 font-normal">({proj.classLevel})</span>
-                </div>
-                <p className="text-xs text-slate-400 font-light font-sans line-clamp-3 leading-relaxed select-text">
-                  {proj.description}
-                </p>
-              </div>
-
-              {/* Tag Badges row */}
-              <div className="flex flex-wrap gap-1.5 select-none">
-                {proj.tags.map((tag, idx) => (
-                  <span key={idx} className="text-[9px] font-mono px-2 py-0.5 rounded-md bg-slate-950 text-slate-400">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-
-              {/* Interactions Footer Section */}
-              <div className="flex items-center justify-between border-t border-slate-850 pt-3 text-[10px] font-mono text-slate-500 select-none">
-                <div className="flex items-center gap-3">
-                  <span className="flex items-center gap-1">
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>{proj.views}</span>
-                  </span>
-                  <button
-                    onClick={(e) => incrementLikes(proj.id, e)}
-                    className="flex items-center gap-1.5 hover:text-rose-400 transition-colors"
-                  >
-                    <Heart className="w-3.5 h-3.5" />
-                    <span>{proj.likes}</span>
-                  </button>
-                </div>
-                <span className="text-indigo-400 flex items-center gap-1 text-[9px]">
-                  <Award className="w-3.5 h-3.5" />
-                  <span>Verified Project</span>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProjects.map((proj) => (
+            <div
+              key={proj.id}
+              className="group/card bg-slate-900 border border-slate-800 hover:border-slate-750 rounded-2xl overflow-hidden flex flex-col transition-all shadow-lg hover:shadow-xl"
+            >
+              {/* Visual Header Grid wrapper */}
+              <div className="aspect-video relative overflow-hidden bg-slate-950">
+                <img
+                  src={proj.thumbnailUrl}
+                  alt={proj.title}
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-500"
+                />
+                <span className="absolute top-3 left-3 px-2 py-0.5 rounded text-[9px] font-mono font-medium tracking-wider uppercase bg-slate-950/80 text-indigo-400 border border-slate-800">
+                  {proj.category}
                 </span>
               </div>
+
+              {/* Content particulars */}
+              <div className="p-4 flex-1 flex flex-col justify-between space-y-3.5 select-text">
+                <div className="space-y-1.5">
+                  <h4 className="font-sans font-semibold text-slate-200 text-sm leading-tight select-text">
+                    {proj.title}
+                  </h4>
+                  <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400">
+                    <span>Created by:</span>
+                    <span className="text-slate-300 font-medium">{proj.developer}</span>
+                    <span className="text-slate-500 font-normal">({proj.classLevel})</span>
+                  </div>
+                  <p className="text-xs text-slate-400 font-light font-sans line-clamp-3 leading-relaxed select-text">
+                    {proj.description}
+                  </p>
+                </div>
+
+                {/* Tag Badges row */}
+                <div className="flex flex-wrap gap-1.5 select-none">
+                  {proj.tags.map((tag, idx) => (
+                    <span key={idx} className="text-[9px] font-mono px-2 py-0.5 rounded-md bg-slate-950 text-slate-400">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Interactions Footer Section */}
+                <div className="flex items-center justify-between border-t border-slate-850 pt-3 text-[10px] font-mono text-slate-500 select-none">
+                  <div className="flex items-center gap-3">
+                    <span className="flex items-center gap-1">
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>{proj.views}</span>
+                    </span>
+                    <button
+                      onClick={(e) => incrementLikes(proj.id, e)}
+                      className="flex items-center gap-1.5 hover:text-rose-400 transition-colors"
+                    >
+                      <Heart className="w-3.5 h-3.5" />
+                      <span>{proj.likes}</span>
+                    </button>
+                  </div>
+                  <span className="text-indigo-400 flex items-center gap-1 text-[9px]">
+                    <Award className="w-3.5 h-3.5" />
+                    <span>Verified Project</span>
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

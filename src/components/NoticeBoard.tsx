@@ -11,7 +11,7 @@ interface NoticeBoardProps {
 }
 
 export default function NoticeBoard({ userProfile, onGrantXp }: NoticeBoardProps) {
-  const [notices, setNotices] = useState<Notice[]>(INITIAL_NOTICES);
+  const [notices, setNotices] = useState<Notice[]>(isSupabaseConfigured ? [] : INITIAL_NOTICES);
   const [newNoticeText, setNewNoticeText] = useState("");
   const [submissionRole, setSubmissionRole] = useState("Student"); // "Student", "Patron", "President"
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -230,57 +230,85 @@ export default function NoticeBoard({ userProfile, onGrantXp }: NoticeBoardProps
       )}
 
       {/* Feed List Output */}
-      <div className="space-y-3.5">
-        {notices.map((notice) => (
-          <div
-            key={notice.id}
-            className={`border rounded-xl p-4 transition-all relative group ${
-              notice.isPinned
-                ? "bg-slate-900 border-indigo-700/50"
-                : "bg-slate-900 border-slate-800/80 hover:border-slate-700"
-            }`}
-          >
-            {/* Pin Badge in context */}
-            {notice.isPinned && (
-              <span className="absolute top-4 right-4 flex items-center gap-1 bg-indigo-600/10 text-indigo-400 border border-indigo-500/10 px-2 py-0.5 rounded text-[9px] font-mono select-none">
-                <Pin className="w-3 h-3 text-indigo-400 fill-indigo-400/10" />
-                <span>PINNED BULLETIN</span>
-              </span>
-            )}
-
-            <div className="flex gap-3">
-              <div className="w-9 h-9 rounded-lg bg-indigo-600/15 border border-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-sm uppercase">
-                {notice.author.substring(0, 2)}
-              </div>
-
-              <div className="space-y-1.5 flex-1 select-text">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                  <span className="text-xs font-semibold text-slate-200">{notice.author}</span>
-                  <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-slate-950 text-slate-400 w-fit">
-                    {notice.role}
-                  </span>
+      {dbLoading ? (
+        <div id="notice-skeletons-container" className="space-y-3.5">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={`notice-skeleton-${i}`}
+              id={`notice-skeleton-${i}`}
+              className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 flex gap-3 animate-pulse"
+            >
+              <div id={`notice-skeleton-avatar-${i}`} className="w-9 h-9 rounded-lg bg-slate-800 shrink-0" />
+              <div id={`notice-skeleton-text-block-${i}`} className="space-y-2.5 flex-1 pt-1">
+                <div id={`notice-skeleton-header-${i}`} className="flex items-center gap-2">
+                  <div className="h-3.5 w-24 bg-slate-800 rounded-md" />
+                  <div className="h-4 w-16 bg-slate-850 rounded-md" />
                 </div>
-
-                <p className="text-xs text-slate-300 leading-relaxed font-sans font-light select-text">
-                  {notice.content}
-                </p>
-
-                {/* Card footer interaction bar */}
-                <div className="flex items-center gap-4 text-[10px] font-mono text-slate-500 pt-2 select-none">
-                  <span>{notice.timestamp}</span>
-                  <button
-                    onClick={() => handleLikePost(notice.id)}
-                    className="flex items-center gap-1.5 hover:text-rose-400 transition-colors group/btn"
-                  >
-                    <Heart className="w-3.5 h-3.5 text-slate-500 group-hover/btn:text-rose-400 transition-colors" />
-                    <span>{notice.likes} Likes</span>
-                  </button>
+                <div id={`notice-skeleton-body-${i}`} className="space-y-2 pt-1">
+                  <div className="h-3 w-full bg-slate-800 rounded" />
+                  <div className="h-3 w-[85%] bg-slate-800 rounded" />
+                </div>
+                <div id={`notice-skeleton-footer-${i}`} className="flex items-center gap-4 pt-2.5">
+                  <div className="h-3 w-12 bg-slate-850 rounded" />
+                  <div className="h-3 w-16 bg-slate-850 rounded" />
                 </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-3.5">
+          {notices.map((notice) => (
+            <div
+              key={notice.id}
+              className={`border rounded-xl p-4 transition-all relative group ${
+                notice.isPinned
+                  ? "bg-slate-900 border-indigo-700/50"
+                  : "bg-slate-900 border-slate-800/80 hover:border-slate-700"
+              }`}
+            >
+              {/* Pin Badge in context */}
+              {notice.isPinned && (
+                <span className="absolute top-4 right-4 flex items-center gap-1 bg-indigo-600/10 text-indigo-400 border border-indigo-500/10 px-2 py-0.5 rounded text-[9px] font-mono select-none">
+                  <Pin className="w-3 h-3 text-indigo-400 fill-indigo-400/10" />
+                  <span>PINNED BULLETIN</span>
+                </span>
+              )}
+
+              <div className="flex gap-3">
+                <div className="w-9 h-9 rounded-lg bg-indigo-600/15 border border-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-sm uppercase">
+                  {notice.author.substring(0, 2)}
+                </div>
+
+                <div className="space-y-1.5 flex-1 select-text">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                    <span className="text-xs font-semibold text-slate-200">{notice.author}</span>
+                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-slate-950 text-slate-400 w-fit">
+                      {notice.role}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-slate-300 leading-relaxed font-sans font-light select-text">
+                    {notice.content}
+                  </p>
+
+                  {/* Card footer interaction bar */}
+                  <div className="flex items-center gap-4 text-[10px] font-mono text-slate-500 pt-2 select-none">
+                    <span>{notice.timestamp}</span>
+                    <button
+                      onClick={() => handleLikePost(notice.id)}
+                      className="flex items-center gap-1.5 hover:text-rose-400 transition-colors group/btn"
+                    >
+                      <Heart className="w-3.5 h-3.5 text-slate-500 group-hover/btn:text-rose-400 transition-colors" />
+                      <span>{notice.likes} Likes</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

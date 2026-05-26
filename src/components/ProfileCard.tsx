@@ -33,25 +33,18 @@ export default function ProfileCard({ userProfile, onUpdateProfile }: ProfileCar
   const [userUsername, setUserUsername] = useState(userProfile.username || "");
   const [userBio, setUserBio] = useState(userProfile.bio || "");
   const [userClass, setUserClass] = useState(userProfile.classLevel);
-  const [selectedAvatar, setSelectedAvatar] = useState(userProfile.avatarSeed);
+  const [selectedAvatarUrl, setSelectedAvatarUrl] = useState(userProfile.avatarUrl);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const isCustomImage = userProfile.avatarSeed && (
-    userProfile.avatarSeed.startsWith("http") || 
-    userProfile.avatarSeed.startsWith("data:") || 
-    userProfile.avatarSeed.startsWith("/") || 
-    userProfile.avatarSeed.includes("/")
-  );
-
-  const currentPreset = AVATAR_PRESETS.find(a => a.id === userProfile.avatarSeed);
+  const isCustomImage = !!userProfile.avatarUrl;
 
   const handleStartEdit = () => {
     setUserName(userProfile.name);
     setUserUsername(userProfile.username || userProfile.email?.split("@")[0].replace(/[^a-zA-Z0-9]/g, "").toLowerCase() || "");
     setUserBio(userProfile.bio || "");
     setUserClass(userProfile.classLevel);
-    setSelectedAvatar(userProfile.avatarSeed);
+    setSelectedAvatarUrl(userProfile.avatarUrl);
     setUploadError(null);
     setIsEditing(true);
   };
@@ -70,7 +63,7 @@ export default function ProfileCard({ userProfile, onUpdateProfile }: ProfileCar
       username: cleanUsername,
       bio: userBio.trim(),
       classLevel: userClass,
-      avatarSeed: selectedAvatar
+      avatarUrl: selectedAvatarUrl
     });
     setIsEditing(false);
   };
@@ -101,7 +94,7 @@ export default function ProfileCard({ userProfile, onUpdateProfile }: ProfileCar
       const base64data = reader.result as string;
       
       // Keep local state updated instantly for optimistic visual feedback
-      setSelectedAvatar(base64data);
+      setSelectedAvatarUrl(base64data);
 
       const { isSupabaseConfigured, supabase } = await import("../lib/supabaseClient");
       if (isSupabaseConfigured) {
@@ -113,29 +106,29 @@ export default function ProfileCard({ userProfile, onUpdateProfile }: ProfileCar
 
           // Upload to 'avatars' storage bucket
           const { data, error } = await supabase.storage
-            .from('avatars')
-            .upload(filePath, file, { cacheControl: '3600', upsert: true });
+              .from('avatars')
+              .upload(filePath, file, { cacheControl: '3600', upsert: true });
 
           if (error) {
             console.warn("Could not save to avatars bucket, falling back to profile record base64 storage.");
-            setSelectedAvatar(base64data);
-            onUpdateProfile({ avatarSeed: base64data });
+            setSelectedAvatarUrl(base64data);
+            onUpdateProfile({ avatarUrl: base64data });
           } else {
             // Retrieve public URL
             const { data: { publicUrl } } = supabase.storage
               .from('avatars')
               .getPublicUrl(filePath);
 
-            setSelectedAvatar(publicUrl);
-            onUpdateProfile({ avatarSeed: publicUrl });
+            setSelectedAvatarUrl(publicUrl);
+            onUpdateProfile({ avatarUrl: publicUrl });
           }
         } catch (err) {
           console.error("Supabase Storage error:", err);
-          onUpdateProfile({ avatarSeed: base64data });
+          onUpdateProfile({ avatarUrl: base64data });
         }
       } else {
         // Safe offline base64 storage
-        onUpdateProfile({ avatarSeed: base64data });
+        onUpdateProfile({ avatarUrl: base64data });
       }
       setIsUploading(false);
     };
@@ -162,15 +155,13 @@ export default function ProfileCard({ userProfile, onUpdateProfile }: ProfileCar
               {isCustomImage ? (
                 <img 
                   id="img-profile-photo"
-                  src={userProfile.avatarSeed} 
+                  src={userProfile.avatarUrl} 
                   alt={userProfile.name} 
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover" 
                 />
               ) : (
-                <span className="text-4xl text-slate-100">
-                  {currentPreset?.emoji || "🦁"}
-                </span>
+                <User className="w-10 h-10 text-slate-400" />
               )}
 
               {/* Upload overlay inside avatar circle */}
@@ -290,8 +281,8 @@ export default function ProfileCard({ userProfile, onUpdateProfile }: ProfileCar
             {/* Direct Avatar Trigger */}
             <div className="flex items-center gap-3 bg-slate-900/50 p-2.5 rounded-lg border border-slate-800/40">
               <div className="w-11 h-11 rounded-full bg-pink-600/10 border border-pink-500/20 flex items-center justify-center overflow-hidden">
-                {selectedAvatar && (selectedAvatar.startsWith("http") || selectedAvatar.startsWith("data:")) ? (
-                  <img src={selectedAvatar} className="w-full h-full object-cover" alt="Selected" referrerPolicy="no-referrer" />
+                {selectedAvatarUrl && (selectedAvatarUrl.startsWith("http") || selectedAvatarUrl.startsWith("data:")) ? (
+                  <img src={selectedAvatarUrl} className="w-full h-full object-cover" alt="Selected" referrerPolicy="no-referrer" />
                 ) : (
                   <span className="text-xl">🎨</span>
                 )}

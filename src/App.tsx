@@ -60,11 +60,7 @@ import Dashboard from "./pages/Dashboard";
 
 export default function App() {
   const { user, loading: authLoading } = useAuth();
-  const [currentScreen, setCurrentScreen] = useState<"landing" | "login" | "register" | "app">(() => {
-    const bypassed = localStorage.getItem("stahizza_bypass") === "true";
-    const hasProfile = !!localStorage.getItem("stahiza_ict_profile");
-    return (bypassed && hasProfile) ? "app" : "landing";
-  });
+  const [currentScreen, setCurrentScreen] = useState<"landing" | "login" | "register" | "app">("landing");
 
   const [activeTab, setActiveTab] = useState<
     | "dashboard"
@@ -87,9 +83,6 @@ export default function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [showAiAlert, setShowAiAlert] = useState<boolean>(true);
-  const [isBypassed, setIsBypassed] = useState<boolean>(() => {
-    return localStorage.getItem("stahizza_bypass") === "true";
-  });
 
   const [userProfile, setUserProfile] = useState<StudentProfile>(() => {
     const stored = localStorage.getItem("stahiza_ict_profile");
@@ -101,15 +94,15 @@ export default function App() {
       }
     }
     return {
-      name: "Atamba Joel",
-      classLevel: "Senior 6",
+      name: "Guest Scholar",
+      classLevel: "Senior 5",
       xp: 120,
       level: 1,
       unlockedBadges: ["Starter Bit"],
       solvedChallengeIds: [],
-      avatarSeed: "Sandra",
+      avatarUrl: "",
       rank: "Cadet",
-      role: "president"
+      role: "member"
     };
   });
 
@@ -129,11 +122,13 @@ export default function App() {
     }
   }, [theme]);
 
-  const [leaderboard, setLeaderboard] = useState<any[]>([
-    { name: "Kyobe Arthur", xp: 1980 },
-    { name: "Jerome Maku", xp: 1910 },
-    { name: "Nabulo Maria", xp: 1850 }
-  ]);
+  const [leaderboard, setLeaderboard] = useState<any[]>(() => {
+    return isSupabaseConfigured ? [] : [
+      { name: "Kyobe Arthur", xp: 1980 },
+      { name: "Jerome Maku", xp: 1910 },
+      { name: "Nabulo Maria", xp: 1850 }
+    ];
+  });
 
   useEffect(() => {
     async function loadLeaderboard() {
@@ -158,27 +153,50 @@ export default function App() {
         setCurrentScreen("app");
       } else {
         // Initial insert
-        await saveProfileToSupabase(userProfile, user.id);
+        // Derive clean name from student email
+        const cleanName = user.email ? user.email.split("@")[0]
+          .replace(/[^a-zA-Z0-9]/g, " ")
+          .split(" ")
+          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ") : "Student Scholar";
+
+        const initProfile: StudentProfile = {
+          name: cleanName,
+          classLevel: "Senior 5",
+          xp: 120,
+          level: 1,
+          unlockedBadges: ["Starter Bit"],
+          solvedChallengeIds: [],
+          avatarUrl: "",
+          rank: "Cadet",
+          role: "member",
+          email: user.email,
+        };
+        setUserProfile(initProfile);
+        await saveProfileToSupabase(initProfile, user.id);
         setCurrentScreen("app");
       }
     }
     loadDbProfile();
   }, [user]);
 
-  // Listen for auth changes to handle automatic logout if state cleared
+  // Listen for auth changes to handle automatic routing screens safely
   useEffect(() => {
-    if (!authLoading && !user && currentScreen === "app" && !isBypassed) {
-      setCurrentScreen("landing");
+    if (!authLoading) {
+      if (user) {
+        setCurrentScreen("app");
+      } else if (currentScreen === "app") {
+        setCurrentScreen("landing");
+      }
     }
-  }, [user, authLoading, currentScreen, isBypassed]);
+  }, [user, authLoading]);
 
   // Sync profile edits with localStorage & Supabase
   useEffect(() => {
     localStorage.setItem("stahiza_ict_profile", JSON.stringify(userProfile));
     
-    if (isSupabaseConfigured) {
-      const profileId = user?.id || "primary_student";
-      saveProfileToSupabase(userProfile, profileId);
+    if (isSupabaseConfigured && user?.id) {
+      saveProfileToSupabase(userProfile, user.id);
     }
   }, [userProfile, user]);
 
@@ -240,10 +258,7 @@ export default function App() {
     }));
   };
 
-  const handleLoginSuccess = async (email: string, bypassed: boolean = false) => {
-    setIsBypassed(bypassed);
-    localStorage.setItem("stahizza_bypass", bypassed ? "true" : "false");
-
+  const handleLoginSuccess = async (email: string) => {
     let loadedProfile: StudentProfile | null = null;
     if (isSupabaseConfigured) {
       loadedProfile = await fetchProfileByEmail(email);
@@ -251,7 +266,7 @@ export default function App() {
 
     if (loadedProfile) {
       setUserProfile(loadedProfile);
-      handleGrantXp(10, bypassed ? "Loaded real cloud profile via offline bypass!" : "Cloud profile matched & synchronized!");
+      handleGrantXp(10, "Cloud profile matched & synchronized!");
     } else {
       const cleanName = email.split("@")[0]
         .replace(/[^a-zA-Z0-9]/g, " ")
@@ -266,14 +281,22 @@ export default function App() {
         role: "member",
         email: email
       }));
-      handleGrantXp(10, bypassed ? "Bypassed securely to local workspace!" : "Workspace Access Credentials authenticated!");
+      handleGrantXp(10, "Workspace Access Credentials authenticated!");
     }
 
     setCurrentScreen("app");
     setActiveTab("dashboard");
   };
 
-  const handleRegisterSuccess = (name: string, email: string, classLevel: string, avatarSeed: string, role: "president" | "cabinet" | "member", bypassed: boolean = false) => {
+  const handleRegisterSuccess = (
+    name: string,
+    email: string,
+    classLevel: string,
+    avatarUrl: string,
+    role: "president" | "cabinet" | "member",
+    username?: string,
+    bio?: string
+  ) => {
     setUserProfile({
       name,
       classLevel,
@@ -281,19 +304,17 @@ export default function App() {
       level: 1,
       unlockedBadges: ["Starter Bit"],
       solvedChallengeIds: [],
-      avatarSeed,
+      avatarUrl,
       rank: classLevel.includes("Patron") ? "Patron Mentor" : "Cadet",
       role,
-      email
+      email,
+      username: username || email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "").toLowerCase(),
+      bio: bio || ""
     });
-    setIsBypassed(bypassed);
-    localStorage.setItem("stahizza_bypass", bypassed ? "true" : "false");
-    handleGrantXp(15, bypassed ? "Created member portal keys with local bypass successfully!" : "Created member portal keys successfully!");
+    handleGrantXp(15, "Created member portal keys successfully!");
     setCurrentScreen("app");
     setActiveTab("dashboard");
   };
-
-  const activeAvatarInfo = AVATAR_PRESETS.find(a => a.id === userProfile.avatarSeed) || AVATAR_PRESETS[0];
 
   const levelFloorXp = (userProfile.level - 1) * 300;
   const xpInCurrentLevel = userProfile.xp - levelFloorXp;
@@ -421,10 +442,10 @@ export default function App() {
           <div className="p-4 border-b border-slate-900/60 bg-[#0B1220]/40 space-y-2">
             <div className="flex items-center gap-2.5">
               <span className="text-xl bg-slate-950 w-8 h-8 rounded-xl flex items-center justify-center border border-slate-800 shrink-0 overflow-hidden">
-                {userProfile.avatarSeed.startsWith("http") || userProfile.avatarSeed.startsWith("data:") ? (
-                  <img src={userProfile.avatarSeed} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                {userProfile.avatarUrl ? (
+                  <img src={userProfile.avatarUrl} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                 ) : (
-                  activeAvatarInfo.emoji
+                  <User className="w-4 h-4 text-slate-400" />
                 )}
               </span>
               <div className="truncate">
@@ -605,10 +626,10 @@ export default function App() {
               {theme === "dark" ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-400" />}
             </button>
             <span className="text-lg bg-slate-900 w-7 h-7 rounded-lg flex items-center justify-center border border-[#1e293b] overflow-hidden">
-              {userProfile.avatarSeed.startsWith("http") || userProfile.avatarSeed.startsWith("data:") ? (
-                <img src={userProfile.avatarSeed} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              {userProfile.avatarUrl ? (
+                <img src={userProfile.avatarUrl} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
               ) : (
-                activeAvatarInfo.emoji
+                <User className="w-3.5 h-3.5 text-slate-400" />
               )}
             </span>
           </div>
@@ -645,8 +666,6 @@ export default function App() {
                 if (isSupabaseConfigured) {
                   await supabase.auth.signOut();
                 }
-                setIsBypassed(false);
-                localStorage.removeItem("stahizza_bypass");
                 setCurrentScreen("landing");
               }}
               onUpdateProfile={handleUpdateProfile}
