@@ -4,7 +4,7 @@ import { supabase, isSupabaseConfigured } from "../lib/supabaseClient";
 
 interface LoginProps {
   onNavigateToRegister?: () => void;
-  onLoginSuccess?: (email: string) => void;
+  onLoginSuccess?: (email: string, bypassed?: boolean) => void;
   onBackToLanding?: () => void;
 }
 
@@ -125,7 +125,7 @@ export default function Login({ onNavigateToRegister, onLoginSuccess, onBackToLa
                     setTimeout(() => {
                       setIsLoading(false);
                       if (onLoginSuccess) {
-                        onLoginSuccess(email);
+                        onLoginSuccess(email, true);
                       }
                     }, 500);
                   }}

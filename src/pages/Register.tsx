@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabaseClient";
 
 interface RegisterProps {
   onNavigateToLogin?: () => void;
-  onRegisterSuccess?: (name: string, email: string, classLevel: string, avatarSeed: string, role: "president" | "cabinet" | "member") => void;
+  onRegisterSuccess?: (name: string, email: string, classLevel: string, avatarSeed: string, role: "president" | "cabinet" | "member", bypassed?: boolean) => void;
   onBackToLanding?: () => void;
 }
 
@@ -163,7 +163,8 @@ export default function Register({ onNavigateToLogin, onRegisterSuccess, onBackT
                           email || "hastyjoel1@gmail.com",
                           classLevel || "Senior 6",
                           selectedAvatar || "Sandra",
-                          role || "president"
+                          role || "president",
+                          true
                         );
                       }
                     }, 500);

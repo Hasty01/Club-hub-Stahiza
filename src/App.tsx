@@ -58,7 +58,11 @@ import Dashboard from "./pages/Dashboard";
 
 export default function App() {
   const { user, loading: authLoading } = useAuth();
-  const [currentScreen, setCurrentScreen] = useState<"landing" | "login" | "register" | "app">("landing");
+  const [currentScreen, setCurrentScreen] = useState<"landing" | "login" | "register" | "app">(() => {
+    const bypassed = localStorage.getItem("stahizza_bypass") === "true";
+    const hasProfile = !!localStorage.getItem("stahiza_ict_profile");
+    return (bypassed && hasProfile) ? "app" : "landing";
+  });
 
   const [activeTab, setActiveTab] = useState<
     | "dashboard"
@@ -81,6 +85,9 @@ export default function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [showAiAlert, setShowAiAlert] = useState<boolean>(true);
+  const [isBypassed, setIsBypassed] = useState<boolean>(() => {
+    return localStorage.getItem("stahizza_bypass") === "true";
+  });
 
   const [userProfile, setUserProfile] = useState<StudentProfile>(() => {
     const stored = localStorage.getItem("stahiza_ict_profile");
@@ -144,10 +151,10 @@ export default function App() {
 
   // Listen for auth changes to handle automatic logout if state cleared
   useEffect(() => {
-    if (!authLoading && !user && currentScreen === "app") {
+    if (!authLoading && !user && currentScreen === "app" && !isBypassed) {
       setCurrentScreen("landing");
     }
-  }, [user, authLoading, currentScreen]);
+  }, [user, authLoading, currentScreen, isBypassed]);
 
   // Sync profile edits with localStorage & Supabase
   useEffect(() => {
@@ -217,7 +224,7 @@ export default function App() {
     }));
   };
 
-  const handleLoginSuccess = (email: string) => {
+  const handleLoginSuccess = (email: string, bypassed: boolean = false) => {
     const cleanName = email.split("@")[0]
       .replace(/[^a-zA-Z0-9]/g, " ")
       .split(" ")
@@ -228,12 +235,14 @@ export default function App() {
       ...prev,
       name: cleanName || prev.name,
     }));
-    handleGrantXp(10, "Workspace Access Credentials authenticated!");
+    setIsBypassed(bypassed);
+    localStorage.setItem("stahizza_bypass", bypassed ? "true" : "false");
+    handleGrantXp(10, bypassed ? "Bypassed securely to local workspace!" : "Workspace Access Credentials authenticated!");
     setCurrentScreen("app");
     setActiveTab("dashboard");
   };
 
-  const handleRegisterSuccess = (name: string, email: string, classLevel: string, avatarSeed: string, role: "president" | "cabinet" | "member") => {
+  const handleRegisterSuccess = (name: string, email: string, classLevel: string, avatarSeed: string, role: "president" | "cabinet" | "member", bypassed: boolean = false) => {
     setUserProfile({
       name,
       classLevel,
@@ -245,7 +254,9 @@ export default function App() {
       rank: classLevel.includes("Patron") ? "Patron Mentor" : "Cadet",
       role
     });
-    handleGrantXp(15, "Created member portal keys successfully!");
+    setIsBypassed(bypassed);
+    localStorage.setItem("stahizza_bypass", bypassed ? "true" : "false");
+    handleGrantXp(15, bypassed ? "Created member portal keys with local bypass successfully!" : "Created member portal keys successfully!");
     setCurrentScreen("app");
     setActiveTab("dashboard");
   };
@@ -567,6 +578,8 @@ export default function App() {
                 if (isSupabaseConfigured) {
                   await supabase.auth.signOut();
                 }
+                setIsBypassed(false);
+                localStorage.removeItem("stahizza_bypass");
                 setCurrentScreen("landing");
               }}
               onUpdateProfile={handleUpdateProfile}
