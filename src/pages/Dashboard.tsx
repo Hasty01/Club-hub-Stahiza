@@ -160,10 +160,7 @@ export default function Dashboard({ userProfile, onNavigateToTab, onLogout, onUp
     ? "🛡️ Cabinet Member" 
     : "🌱 Club Member";
 
-  const isAdmin = 
-    userProfile.email?.toLowerCase().trim() === "hastyjoel1@gmail.com" || 
-    userProfile.username?.toLowerCase().trim() === "a_j0el" ||
-    userProfile.name?.toLowerCase().includes("atamba joel");
+  const isAdmin = userProfile.role === "president";
 
   return (
     <div id="dashboard-container" className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 font-sans">
