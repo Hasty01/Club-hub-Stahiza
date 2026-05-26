@@ -1,4 +1,4 @@
-# 🚀 STAHIZZA ICT Club Hub
+# 🚀 STAHIZZA ICT Club Hub          https://stahizaict-club-hub.vercel.app/
 
 ### *Empowering the Next Generation of Tech Leaders at Standard High High School Zzana*
 
