@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { StudentProfile } from "./types";
 import { TOP_MEMBERS, INITIAL_EVENTS, AVATAR_PRESETS } from "./data";
-import { isSupabaseConfigured } from "./lib/supabaseClient";
+import { supabase, isSupabaseConfigured } from "./lib/supabaseClient";
 import { fetchProfileFromSupabase, saveProfileToSupabase } from "./lib/supabaseSync";
+import { useAuth } from "./context/AuthContext";
 import { 
   Shield, 
   Sparkles, 
@@ -56,6 +57,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 
 export default function App() {
+  const { user, loading: authLoading } = useAuth();
   const [currentScreen, setCurrentScreen] = useState<"landing" | "login" | "register" | "app">("landing");
 
   const [activeTab, setActiveTab] = useState<
@@ -122,29 +124,40 @@ export default function App() {
     loadLeaderboard();
   }, [userProfile.xp]);
 
-  // Fetch initial profile from Supabase
+  // Fetch initial profile from Supabase when user changes
   useEffect(() => {
     async function loadDbProfile() {
       if (!isSupabaseConfigured) return;
-      const dbProf = await fetchProfileFromSupabase();
+      if (!user) return;
+      const dbProf = await fetchProfileFromSupabase(user.id);
       if (dbProf) {
         setUserProfile(dbProf);
+        setCurrentScreen("app");
       } else {
         // Initial insert
-        await saveProfileToSupabase(userProfile);
+        await saveProfileToSupabase(userProfile, user.id);
+        setCurrentScreen("app");
       }
     }
     loadDbProfile();
-  }, []);
+  }, [user]);
+
+  // Listen for auth changes to handle automatic logout if state cleared
+  useEffect(() => {
+    if (!authLoading && !user && currentScreen === "app") {
+      setCurrentScreen("landing");
+    }
+  }, [user, authLoading, currentScreen]);
 
   // Sync profile edits with localStorage & Supabase
   useEffect(() => {
     localStorage.setItem("stahiza_ict_profile", JSON.stringify(userProfile));
     
     if (isSupabaseConfigured) {
-      saveProfileToSupabase(userProfile);
+      const profileId = user?.id || "primary_student";
+      saveProfileToSupabase(userProfile, profileId);
     }
-  }, [userProfile]);
+  }, [userProfile, user]);
 
   // Handle XP increments and level-up milestones
   const handleGrantXp = (amount: number, reason: string) => {
@@ -261,6 +274,17 @@ export default function App() {
     { id: "showcase", label: "Showcase", icon: Award, desc: "Publish digital creations" },
     { id: "profile", label: "Profile", icon: User, desc: "Configure student registers" }
   ];
+
+  if (authLoading && isSupabaseConfigured) {
+    return (
+      <div className="min-h-screen bg-[#070A13] text-slate-100 flex flex-col items-center justify-center p-4">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mx-auto animate-[spin_1s_linear_infinite]"></div>
+          <p className="font-mono text-xs text-slate-400">LOADING DIGITAL PORTAL KEYS...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (currentScreen === "landing") {
     return (
@@ -539,7 +563,10 @@ export default function App() {
               onNavigateToTab={(tab) => {
                 setActiveTab(tab as any);
               }}
-              onLogout={() => {
+              onLogout={async () => {
+                if (isSupabaseConfigured) {
+                  await supabase.auth.signOut();
+                }
                 setCurrentScreen("landing");
               }}
               onUpdateProfile={handleUpdateProfile}

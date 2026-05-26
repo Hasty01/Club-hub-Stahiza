@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Shield, Lock, Mail, ChevronRight, Sparkles, Terminal } from "lucide-react";
+import { supabase, isSupabaseConfigured } from "../lib/supabaseClient";
 
 interface LoginProps {
   onNavigateToRegister?: () => void;
@@ -36,13 +37,30 @@ export default function Login({ onNavigateToRegister, onLoginSuccess, onBackToLa
 
     setIsLoading(true);
 
-    // Simulate authentication pipeline
-    setTimeout(() => {
-      setIsLoading(false);
-      if (onLoginSuccess) {
-        onLoginSuccess(email);
-      }
-    }, 900);
+    if (isSupabaseConfigured) {
+      supabase.auth.signInWithPassword({
+        email,
+        password,
+      }).then(({ data, error: loginError }) => {
+        setIsLoading(false);
+        if (loginError) {
+          setError(loginError.message);
+        } else if (onLoginSuccess && data.user) {
+          onLoginSuccess(email);
+        }
+      }).catch((err) => {
+        setIsLoading(false);
+        setError(err.message || "An unexpected error occurred during login verification.");
+      });
+    } else {
+      // Simulate authentication pipeline as a local fallback
+      setTimeout(() => {
+        setIsLoading(false);
+        if (onLoginSuccess) {
+          onLoginSuccess(email);
+        }
+      }, 900);
+    }
   };
 
   return (
