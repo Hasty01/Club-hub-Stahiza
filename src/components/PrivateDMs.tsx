@@ -67,6 +67,10 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
   const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [reactions, setReactions] = useState<any[]>([]);
+  const [activePickerMessageId, setActivePickerMessageId] = useState<string | null>(null);
+  const [recipientTyping, setRecipientTyping] = useState(false);
+  const typingTimeoutRef = useRef<any>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const subscriptionRef = useRef<any>(null);
@@ -109,6 +113,9 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
     return () => {
       clearInterval(presenceTimer);
       supabase.removeChannel(presenceChannel);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -117,10 +124,12 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // 3. Keep real-time subscription alive for standard DMs
+  // 3. Keep real-time subscription alive for standard DMs, reactions, and typing indicator status
   useEffect(() => {
     if (!activeConvId) {
       setMessages([]);
+      setReactions([]);
+      setRecipientTyping(false);
       return;
     }
 
@@ -147,16 +156,44 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
           fetchDmMessages(activeConvId);
         }
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "message_reactions",
+        },
+        () => {
+          fetchReactions();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "typing_status",
+        },
+        () => {
+          checkRecipientTyping();
+        }
+      )
       .subscribe();
 
     subscriptionRef.current = channel;
+
+    // Periodically sync recipient typing status
+    const pollInterval = setInterval(() => {
+      checkRecipientTyping();
+    }, 4000);
 
     return () => {
       if (subscriptionRef.current) {
         supabase.removeChannel(subscriptionRef.current);
       }
+      clearInterval(pollInterval);
     };
-  }, [activeConvId]);
+  }, [activeConvId, selectedRecipient]);
 
   // Fetch registered club members
   async function fetchProfiles() {
@@ -250,6 +287,135 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
     }
   }
 
+  // Fetch reactions associated with loaded messages
+  async function fetchReactions() {
+    try {
+      const messageIds = messages.map((m) => m.id).filter(Boolean);
+      if (messageIds.length === 0) return;
+
+      const { data } = await supabase
+        .from("message_reactions")
+        .select("*")
+        .in("message_id", messageIds);
+
+      setReactions(data || []);
+    } catch (e) {
+      console.warn("Failed to fetch message reactions:", e);
+    }
+  }
+
+  // Sync reactions whenever messages change
+  useEffect(() => {
+    fetchReactions();
+  }, [messages]);
+
+  // Toggle emoji reaction state
+  async function toggleReaction(messageId: string, emoji: string) {
+    try {
+      const myId = getMyUserId();
+      if (!myId) return;
+
+      const existing = reactions.find(
+        (r) =>
+          r.message_id === messageId &&
+          (r.user_id === myId || r.id === myId) &&
+          r.emoji === emoji
+      );
+
+      if (existing) {
+        // Remove reaction
+        const { error: delErr } = await supabase
+          .from("message_reactions")
+          .delete()
+          .eq("id", existing.id);
+
+        if (delErr) {
+          await supabase
+            .from("message_reactions")
+            .delete()
+            .eq("message_id", messageId)
+            .eq("emoji", emoji);
+        }
+      } else {
+        // Add reaction
+        const payload = {
+          message_id: messageId,
+          user_id: myId,
+          emoji,
+        };
+        await supabase.from("message_reactions").insert([payload]);
+      }
+
+      fetchReactions();
+    } catch (e) {
+      console.warn("Reaction toggle error:", e);
+    }
+  }
+
+  // Check if currently selected peer is typing
+  async function checkRecipientTyping() {
+    if (!selectedRecipient) {
+      setRecipientTyping(false);
+      return;
+    }
+    try {
+      const tenSecondsAgo = new Date(Date.now() - 10 * 1000).toISOString();
+      const { data } = await supabase
+        .from("typing_status")
+        .select("*")
+        .or(`id.eq.${selectedRecipient.id},user_id.eq.${selectedRecipient.id}`)
+        .eq("is_typing", true)
+        .gte("updated_at", tenSecondsAgo);
+
+      setRecipientTyping(data && data.length > 0);
+    } catch (e) {
+      console.warn("Failed to retrieve recipient typing status:", e);
+    }
+  }
+
+  // Broadcast current user's typing indicator status
+  async function updateMyTypingStatus(isTyping: boolean) {
+    try {
+      const activeUserId = getMyUserId();
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(activeUserId || "");
+      if (!isUuid || !activeUserId) return;
+
+      const payload = {
+        username: getMyUserName(),
+        is_typing: isTyping,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error: errA } = await supabase
+        .from("typing_status")
+        .upsert([{ ...payload, id: activeUserId }]);
+
+      if (errA) {
+        await supabase
+          .from("typing_status")
+          .upsert([{ ...payload, user_id: activeUserId }]);
+      }
+    } catch (e) {
+      console.warn("Failed to update typing status:", e);
+    }
+  }
+
+  // Handler for text input change that triggers typing status
+  const handleTextChange = (val: string) => {
+    setText(val);
+    
+    // Broadcast active typing status immediately
+    updateMyTypingStatus(true);
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    typingTimeoutRef.current = setTimeout(() => {
+      updateMyTypingStatus(false);
+    }, 2500);
+  };
+
   // Set up conversation with selected recipient (using sorting client-side robust fallback)
   async function handleSelectRecipient(recipient: Profile) {
     const myId = getMyUserId();
@@ -318,6 +484,12 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
 
     const myId = getMyUserId();
     if (!myId) return;
+
+    // Clear typing status instantly
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    updateMyTypingStatus(false);
 
     const msgContent = text;
     const currentAttachmentUrl = attachmentUrl;
@@ -529,6 +701,7 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
               ) : (
                 messages.map((m, index) => {
                   const isUserM = m.sender_id === myId;
+                  const msgReactions = reactions.filter((r) => r.message_id === m.id);
                   
                   return (
                     <div
@@ -547,7 +720,7 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
                           }`}
                         >
                           {m.content}
-
+ 
                           {/* Render File/Image Attachment block */}
                           {m.file_url && (
                             <div className="mt-2.5 p-1.5 bg-slate-950/40 rounded-xl border border-slate-800/80 overflow-hidden">
@@ -575,10 +748,123 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
                             </div>
                           )}
                         </div>
+
+                        {/* Desktop Hover Quick Reactions Box */}
+                        {m.id && (
+                          <div
+                            className={`absolute z-10 top-0 mt-1 select-none flex items-center gap-1 p-1 bg-slate-900 border border-slate-800 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${
+                              isUserM ? "right-full mr-2" : "left-full ml-2"
+                            }`}
+                          >
+                            {["👍", "🔥", "❤️", "🙌", "😮"].map((emoji) => (
+                              <button
+                                key={emoji}
+                                type="button"
+                                onClick={() => toggleReaction(m.id, emoji)}
+                                className="text-xs w-5 h-5 flex items-center justify-center hover:scale-125 transition-transform"
+                                title={emoji}
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={() => setActivePickerMessageId(activePickerMessageId === m.id ? null : m.id)}
+                              className="text-slate-400 hover:text-pink-400 w-5 h-5 flex items-center justify-center hover:scale-125 transition-transform border-l border-slate-800 pl-1 ml-0.5"
+                              title="More reactions..."
+                            >
+                              <Smile className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Live Emoji Picker Popover */}
+                        {activePickerMessageId === m.id && (
+                          <div className={`absolute z-30 bottom-full mb-2 ${isUserM ? "right-0" : "left-0"} bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-3 w-56 animate-in fade-in slide-in-from-bottom-2 duration-150`}>
+                            <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-800/80">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">React with Emoji</span>
+                              <button
+                                onClick={() => setActivePickerMessageId(null)}
+                                type="button"
+                                className="text-[10px] text-slate-500 hover:text-slate-350 px-1"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-6 gap-1.5 max-h-40 overflow-y-auto pr-0.5">
+                              {[
+                                "👍", "👎", "❤️", "🔥", "😂", "😮", 
+                                "😢", "😡", "🙌", "👏", "🎉", "🚀", 
+                                "👀", "💯", "🤔", "😭", "🥰", "💀", 
+                                "✨", "👑", "🌟", "💡", "💖", "🎯"
+                              ].map((emoji) => (
+                                <button
+                                  key={emoji}
+                                  type="button"
+                                  onClick={() => {
+                                    toggleReaction(m.id, emoji);
+                                    setActivePickerMessageId(null);
+                                  }}
+                                  className="text-base w-7 h-7 flex items-center justify-center hover:bg-slate-800 hover:scale-115 rounded-lg transition-all duration-100"
+                                >
+                                  {emoji}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
+
+                      {/* Display reactions tray under bubble */}
+                      {msgReactions.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {Object.entries(
+                            msgReactions.reduce((acc: any, r: any) => {
+                              acc[r.emoji] = (acc[r.emoji] || 0) + 1;
+                              return acc;
+                            }, {})
+                          ).map(([emoji, count]: any) => {
+                            const hasReacted = msgReactions.some(
+                              (r) => r.emoji === emoji && (r.user_id === myId || r.id === myId)
+                            );
+                            return (
+                              <button
+                                key={emoji}
+                                type="button"
+                                onClick={() => toggleReaction(m.id, emoji)}
+                                className={`flex items-center gap-1.5 text-[9px] px-2 py-0.5 rounded-full border transition-all ${
+                                  hasReacted
+                                    ? "bg-pink-500/15 border-pink-505 text-pink-400 font-bold"
+                                    : "bg-slate-900/90 border-slate-850 hover:border-slate-700 text-slate-400"
+                                }`}
+                              >
+                                <span>{emoji}</span>
+                                <span>{count}</span>
+                              </button>
+                            );
+                          })}
+                          <button
+                            type="button"
+                            onClick={() => setActivePickerMessageId(activePickerMessageId === m.id ? null : m.id)}
+                            className="flex items-center justify-center w-5 h-5 rounded-full border border-dashed border-slate-700 hover:border-pink-500 text-slate-500 hover:text-pink-400 text-[10px] transition-colors bg-slate-950/40"
+                            title="Add reaction"
+                          >
+                            +
+                          </button>
+                        </div>
+                      )}
 
                       {/* Seen / timestamp status layout */}
                       <div className="flex items-center gap-1 mt-1 text-[8px] text-slate-500 font-mono select-none">
+                        <button
+                          type="button"
+                          onClick={() => setActivePickerMessageId(activePickerMessageId === m.id ? null : m.id)}
+                          className="p-0.5 text-slate-500 hover:text-pink-400 transition-colors flex items-center"
+                          title="Add reaction"
+                        >
+                          <Smile className="w-2.5 h-2.5" />
+                        </button>
+                        <span>•</span>
                         <span>{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         <span>•</span>
                         {isUserM ? (
@@ -606,6 +892,18 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Recipient Typing indicator status bar */}
+            {recipientTyping && selectedRecipient && (
+              <div className="px-4 py-1.5 text-[10px] text-pink-400 font-mono flex items-center gap-1.5 bg-slate-900/30 border-t border-slate-800/50">
+                <div className="flex gap-1 shrink-0">
+                  <span className="w-1.5 h-1.5 bg-pink-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                  <span className="w-1.5 h-1.5 bg-pink-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                  <span className="w-1.5 h-1.5 bg-pink-500 rounded-full animate-bounce" />
+                </div>
+                <span>{selectedRecipient.name} is typing...</span>
+              </div>
+            )}
+
             {/* Typing popup bar */}
             {showEmojiPicker && (
               <div className="mx-3 my-1 p-2 bg-slate-900 border border-slate-800 rounded-xl flex gap-1 items-center justify-between shrink-0">
@@ -614,7 +912,7 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
                     <button
                       key={emoji}
                       onClick={() => {
-                        setText((prev) => prev + emoji);
+                        handleTextChange(text + emoji);
                         setShowEmojiPicker(false);
                       }}
                       className="text-sm p-1 hover:bg-slate-800 hover:scale-125 rounded transition-transform"
@@ -643,7 +941,7 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
                 </div>
                 <div className="flex gap-2">
                   <input
-                    type="url"
+                     type="url"
                     placeholder="Paste direct URL (e.g. https://image.png)..."
                     value={attachmentUrl}
                     onChange={(e) => {
@@ -706,7 +1004,7 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
 
               <input
                 value={text}
-                onChange={(e) => setText(e.target.value)}
+                onChange={(e) => handleTextChange(e.target.value)}
                 placeholder="Type private message..."
                 className="flex-1 bg-slate-900/90 border border-slate-800 hover:border-slate-700 focus:focus:border-pink-500/50 focus:ring-1 focus:ring-pink-500/50 rounded-xl text-slate-100 text-xs px-3.5 py-2 placeholder:text-slate-505 outline-none transition-all font-sans"
               />
