@@ -59,8 +59,11 @@ export default function LiveChat({ userProfile }: any) {
   async function sendMessage() {
     if (!text.trim()) return;
 
+    // Fetch the real underlying Supabase auth user
+    const { data: { user } } = await supabase.auth.getUser();
+    
     // Direct active session matching, then mapped local profile parameter
-    const rawProfileId = userProfile?.id || authUserId;
+    const rawProfileId = userProfile?.id || authUserId || user?.id;
     
     // Strict UUID validation checklist to prevent Postgres uuid format cast errors
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawProfileId || "");
@@ -68,9 +71,11 @@ export default function LiveChat({ userProfile }: any) {
 
     const payload: any = {
       profile_id: resolvedProfileId,
+      sender_id: user?.id || resolvedProfileId,
       username: userProfile?.name || userProfile?.username || "Companion",
-      avatar_url: userProfile?.avatarUrl || userProfile?.avatar_url || "Sandra",
+      avatar_url: userProfile?.avatarUrl || userProfile?.avatar_url || "https://placehold.co/100",
       message: text,
+      content: text,
     };
 
     // If there's an issue with the custom structure, we match standard fallback logic safely

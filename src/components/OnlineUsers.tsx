@@ -105,7 +105,7 @@ export default function OnlineUsers() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-semibold text-slate-100 truncate">
-                      {user.username}
+                      {user.username || "Companion"}
                     </span>
                     {roleBadge}
                   </div>
