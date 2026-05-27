@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { StudentProfile } from "../types";
 import LiveChat from "../components/LiveChat";
+import { useOnlinePresence } from "../hooks/useOnlinePresence";
+import OnlineUsers from "../components/OnlineUsers";
 import { 
   Trophy, 
   Award, 
@@ -38,6 +40,9 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ userProfile, onNavigateToTab, onLogout, onUpdateProfile }: DashboardProps) {
+  // Activate Realtime presence tracking
+  useOnlinePresence(userProfile);
+
   // Calculate percentages
   const levelFloorXp = (userProfile.level - 1) * 300;
   const xpInCurrentLevel = userProfile.xp - levelFloorXp;
@@ -985,6 +990,9 @@ export default function Dashboard({ userProfile, onNavigateToTab, onLogout, onUp
               })}
             </div>
           </div>
+
+          {/* Online User System */}
+          <OnlineUsers />
 
           {/* Live Chat System */}
           <LiveChat userProfile={userProfile} />
