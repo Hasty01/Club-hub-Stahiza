@@ -22,20 +22,30 @@ export function useOnlinePresence(userProfile: any) {
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(activeUserId || "");
       if (!isUuid) return;
 
-      const payload = {
-        id: activeUserId,
+      const basePayload = {
         username: userProfile?.name || userProfile?.username || "Companion",
         avatar_url: userProfile?.avatarUrl || userProfile?.avatar_url || "https://placehold.co/100",
         role: userProfile?.role || "member",
         last_seen: new Date().toISOString(),
       };
 
-      const { error } = await supabase
+      // Try schema variant A: setting 'id' to the activeUserId 
+      const { error: errorA } = await supabase
         .from("online_users")
-        .upsert([payload]);
+        .upsert([{ ...basePayload, id: activeUserId }]);
 
-      if (error) {
-        console.error("Failed to upsert online presence:", error);
+      if (errorA) {
+        // If variant A fails (e.g., column user_id is the foreign key), try schema variant B with 'user_id'
+        const { error: errorB } = await supabase
+          .from("online_users")
+          .upsert([{ ...basePayload, user_id: activeUserId }]);
+
+        if (errorB) {
+          // If both fail, let's try upserting with both properties, letting postgrest/supabase handle it
+          await supabase
+            .from("online_users")
+            .upsert([{ ...basePayload, id: activeUserId, user_id: activeUserId }]);
+        }
       }
     }
 
