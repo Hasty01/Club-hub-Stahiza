@@ -32,6 +32,7 @@ interface DmMessage {
   id: string;
   conversation_id: string;
   sender_id: string;
+  sender_name?: string;
   content: string;
   file_url?: string;
   file_type?: string;
@@ -45,12 +46,22 @@ interface OnlineUser {
   last_seen: string;
 }
 
+const clubChatProfile: Profile = {
+  id: "club-chat-group",
+  name: "📢 STAHIZZA General Club Chat",
+  username: "general-club-chat",
+  avatarUrl: "https://images.unsplash.com/photo-1543269865-cbf427effbad?auto=format&fit=crop&w=150&q=80",
+  classLevel: "Group Lounge (All Members)",
+  role: "club",
+  email: "club@stahizza.org",
+};
+
 export default function PrivateDMs({ userProfile }: { userProfile: any }) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedRecipient, setSelectedRecipient] = useState<Profile | null>(null);
-  const [activeConvId, setActiveConvId] = useState<string | null>(null);
+  const [selectedRecipient, setSelectedRecipient] = useState<Profile | null>(clubChatProfile);
+  const [activeConvId, setActiveConvId] = useState<string | null>("club-chat-group");
   const [messages, setMessages] = useState<DmMessage[]>([]);
   const [text, setText] = useState("");
   
@@ -70,6 +81,7 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
   const [reactions, setReactions] = useState<any[]>([]);
   const [activePickerMessageId, setActivePickerMessageId] = useState<string | null>(null);
   const [recipientTyping, setRecipientTyping] = useState(false);
+  const [clubTypingName, setClubTypingName] = useState("");
   const typingTimeoutRef = useRef<any>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -140,51 +152,94 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
       supabase.removeChannel(subscriptionRef.current);
     }
 
-    // Subscribe to immediate incoming direct messages specific to this DM Tunnel
-    const channelName = `dm-msg-${activeConvId}`;
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "dm_messages",
-          filter: `conversation_id=eq.${activeConvId}`,
-        },
-        () => {
-          fetchDmMessages(activeConvId);
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "message_reactions",
-        },
-        () => {
-          fetchReactions();
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "typing_status",
-        },
-        () => {
-          checkRecipientTyping();
-        }
-      )
-      .subscribe();
+    let channel;
+    if (activeConvId === "club-chat-group") {
+      channel = supabase
+        .channel("dm-club-messages-sync")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "club_messages",
+          },
+          () => {
+            fetchDmMessages("club-chat-group");
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "message_reactions",
+          },
+          () => {
+            fetchReactions();
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "typing_status",
+          },
+          () => {
+            checkClubTyping();
+          }
+        )
+        .subscribe();
+    } else {
+      const channelName = `dm-msg-${activeConvId}`;
+      channel = supabase
+        .channel(channelName)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "dm_messages",
+            filter: `conversation_id=eq.${activeConvId}`,
+          },
+          () => {
+            fetchDmMessages(activeConvId);
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "message_reactions",
+          },
+          () => {
+            fetchReactions();
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "typing_status",
+          },
+          () => {
+            checkRecipientTyping();
+          }
+        )
+        .subscribe();
+    }
 
     subscriptionRef.current = channel;
 
     // Periodically sync recipient typing status
     const pollInterval = setInterval(() => {
-      checkRecipientTyping();
+      if (activeConvId === "club-chat-group") {
+        checkClubTyping();
+      } else {
+        checkRecipientTyping();
+      }
     }, 4000);
 
     return () => {
@@ -244,22 +299,71 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
   async function fetchDmMessages(convId: string) {
     try {
       setLoadingMessages(true);
-      const { data, error } = await supabase
-        .from("dm_messages")
-        .select("*")
-        .eq("conversation_id", convId)
-        .order("created_at", { ascending: true });
+      if (convId === "club-chat-group") {
+        const { data, error } = await supabase
+          .from("club_messages")
+          .select("*")
+          .order("created_at", { ascending: true });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      if (data) {
-        setMessages(data);
-        markDmMessagesAsSeen(convId, data);
+        if (data) {
+          const mapped: DmMessage[] = data.map((m: any) => ({
+            id: m.id,
+            conversation_id: "club-chat-group",
+            sender_id: m.sender_id || m.username || "Unknown",
+            sender_name: m.username || "Peer Scholar",
+            content: m.content || m.message || "",
+            file_url: m.file_url || undefined,
+            file_type: m.file_type || undefined,
+            seen_by: m.seen_by || [],
+            created_at: m.created_at || new Date().toISOString(),
+          }));
+          setMessages(mapped);
+          markClubMessagesAsSeen(data);
+        }
+      } else {
+        const { data, error } = await supabase
+          .from("dm_messages")
+          .select("*")
+          .eq("conversation_id", convId)
+          .order("created_at", { ascending: true });
+
+        if (error) throw error;
+
+        if (data) {
+          setMessages(data);
+          markDmMessagesAsSeen(convId, data);
+        }
       }
     } catch (e) {
-      console.error("Unable to fetch DM messages from Supabase", e);
+      console.error("Unable to fetch messages from Supabase", e);
     } finally {
       setLoadingMessages(false);
+    }
+  }
+
+  // Mark all unread club messages as seen
+  async function markClubMessagesAsSeen(loadedMsgs: any[]) {
+    try {
+      const myId = getMyUserId();
+      if (!myId) return;
+
+      const unread = loadedMsgs.filter(
+        (m) => m.sender_id !== myId && (!m.seen_by || !Array.isArray(m.seen_by) || !m.seen_by.includes(myId))
+      );
+
+      if (unread.length === 0) return;
+
+      for (const m of unread) {
+        const nextSeen = Array.isArray(m.seen_by) ? [...m.seen_by, myId] : [myId];
+        await supabase
+          .from("club_messages")
+          .update({ seen_by: nextSeen })
+          .eq("id", m.id);
+      }
+    } catch (e) {
+      console.warn("Club messages seen sync issue:", e);
     }
   }
 
@@ -352,6 +456,33 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
     }
   }
 
+  // Check if any other club member is currently typing in public
+  async function checkClubTyping() {
+    try {
+      const myId = getMyUserId();
+      const tenSecondsAgo = new Date(Date.now() - 10 * 1000).toISOString();
+      const { data } = await supabase
+        .from("typing_status")
+        .select("*")
+        .eq("is_typing", true)
+        .gte("updated_at", tenSecondsAgo);
+
+      if (data) {
+        const otherTyping = data.find((u: any) => u.id !== myId && u.user_id !== myId);
+        if (otherTyping) {
+          setRecipientTyping(true);
+          setClubTypingName(otherTyping.username || "Companion Scholar");
+        } else {
+          setRecipientTyping(false);
+        }
+      } else {
+        setRecipientTyping(false);
+      }
+    } catch (e) {
+      console.warn("Failed to retrieve public typing status:", e);
+    }
+  }
+
   // Check if currently selected peer is typing
   async function checkRecipientTyping() {
     if (!selectedRecipient) {
@@ -421,6 +552,13 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
     const myId = getMyUserId();
     if (!myId) {
       alert("Please authenticate or log in to launch a direct message conversation.");
+      return;
+    }
+
+    if (recipient.id === "club-chat-group") {
+      setSelectedRecipient(recipient);
+      setActiveConvId("club-chat-group");
+      setMessages([]);
       return;
     }
 
@@ -501,6 +639,40 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
     setShowAttachPopover(false);
     setAttachedCount(0);
 
+    if (activeConvId === "club-chat-group") {
+      let finalContent = msgContent;
+      if (currentAttachmentUrl.trim()) {
+        finalContent = `${msgContent} \n[Attachment: ${currentAttachmentUrl}]`.trim();
+      }
+
+      const payload: any = {
+        content: finalContent,
+        message: finalContent,
+        sender_id: myId,
+        username: getMyUserName(),
+        avatar_url: userProfile?.avatarUrl || userProfile?.avatar_url || "",
+        role: userProfile?.role || "member",
+        seen_by: [myId],
+      };
+
+      if (currentAttachmentUrl.trim()) {
+        payload.file_url = currentAttachmentUrl;
+        payload.file_type = currentAttachmentType;
+      }
+
+      try {
+        const { error } = await supabase.from("club_messages").insert([payload]);
+        if (error) {
+          console.error("Failed to post general club message", error);
+        } else {
+          fetchDmMessages("club-chat-group");
+        }
+      } catch (e) {
+        console.warn("Failed sending club message payload:", e);
+      }
+      return;
+    }
+
     const payload: any = {
       conversation_id: activeConvId,
       sender_id: myId,
@@ -537,7 +709,9 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
   };
 
   const myId = getMyUserId();
-  const currentRecipientOnline = selectedRecipient ? isProfileOnline(selectedRecipient.id) : false;
+  const currentRecipientOnline = selectedRecipient 
+    ? (selectedRecipient.id === "club-chat-group" ? true : isProfileOnline(selectedRecipient.id))
+    : false;
 
   // Filter scholars array based on user queries
   const filteredProfiles = profiles.filter((p) => {
@@ -568,7 +742,42 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
 
         {/* Scholar list Container */}
         <div className="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-thin scrollbar-thumb-slate-800">
-          <div className="px-2 py-1 text-[9px] font-mono tracking-wider uppercase text-slate-500 font-bold mb-1">
+          {/* STAHIZZA General Club Chatroom item */}
+          {(searchQuery === "" || `${clubChatProfile.name} ${clubChatProfile.username} ${clubChatProfile.classLevel}`.toLowerCase().includes(searchQuery.toLowerCase())) && (
+            <button
+              onClick={() => handleSelectRecipient(clubChatProfile)}
+              className={`w-full text-left p-2.5 rounded-xl transition-all duration-150 flex items-center justify-between group mb-2 border ${
+                selectedRecipient?.id === "club-chat-group"
+                  ? "bg-slate-800/90 border-pink-500/20 shadow-md shadow-pink-950/10"
+                  : "hover:bg-slate-900 border-transparent"
+              }`}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="relative shrink-0">
+                  <img
+                    src={clubChatProfile.avatarUrl}
+                    alt={clubChatProfile.name}
+                    referrerPolicy="no-referrer"
+                    className="w-8 h-8 rounded-full border border-slate-700/50 object-cover"
+                  />
+                  <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-slate-950 bg-emerald-400 animate-pulse" />
+                </div>
+                <div className="min-w-0">
+                  <h5 className="font-bold text-slate-100 truncate group-hover:text-pink-400 font-sans text-xs">
+                    {clubChatProfile.name}
+                  </h5>
+                  <span className="text-[10px] font-mono text-slate-400">
+                    {clubChatProfile.classLevel}
+                  </span>
+                </div>
+              </div>
+              <span className="shrink-0 text-[10px] text-pink-400 font-mono pr-1 font-bold animate-pulse">
+                📢 PUBLIC
+              </span>
+            </button>
+          )}
+
+          <div className="px-2 py-1 text-[9px] font-mono tracking-wider uppercase text-slate-500 font-bold mb-1 border-t border-slate-900 pt-2 shrink-0">
             Certified Classmates ({filteredProfiles.length})
           </div>
 
@@ -676,10 +885,17 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
                 </div>
               </div>
 
-              <span className="px-2 py-0.5 text-[8px] font-mono bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-lg uppercase tracking-wider font-extrabold flex items-center gap-1">
-                <Lock className="w-2.5 h-2.5 shrink-0" />
-                Direct Link
-              </span>
+              {selectedRecipient?.id === "club-chat-group" ? (
+                <span className="px-2 py-0.5 text-[8px] font-mono bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg uppercase tracking-wider font-extrabold flex items-center gap-1 animate-pulse">
+                  <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full shrink-0" />
+                  Public Lounge
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 text-[8px] font-mono bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-lg uppercase tracking-wider font-extrabold flex items-center gap-1">
+                  <Lock className="w-2.5 h-2.5 shrink-0" />
+                  Direct Link
+                </span>
+              )}
             </div>
 
             {/* main Message logs container frame */}
@@ -710,6 +926,12 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
                         isUserM ? "ml-auto items-end" : "mr-auto items-start"
                       }`}
                     >
+                      {/* Optional Sender Name header for group club-chat left-aligned items */}
+                      {selectedRecipient?.id === "club-chat-group" && !isUserM && (
+                        <div className="text-[9px] font-mono font-bold text-slate-400 mb-1 flex items-center gap-1.5 uppercase hover:text-pink-400 transition-colors">
+                          <span>{m.sender_name || "Companion Scholar"}</span>
+                        </div>
+                      )}
                       {/* Message Bubble frame */}
                       <div className="relative">
                         <div
@@ -900,7 +1122,7 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
                   <span className="w-1.5 h-1.5 bg-pink-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
                   <span className="w-1.5 h-1.5 bg-pink-500 rounded-full animate-bounce" />
                 </div>
-                <span>{selectedRecipient.name} is typing...</span>
+                <span>{selectedRecipient.id === "club-chat-group" ? `${clubTypingName} is typing...` : `${selectedRecipient.name} is typing...`}</span>
               </div>
             )}
 
