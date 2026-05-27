@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Users2, Award, ShieldAlert, Sparkles, MessageCircle, Heart, UserPlus, Star, User, Loader2 } from "lucide-react";
 import { StudentProfile } from "../types";
 import { supabase, isSupabaseConfigured } from "../lib/supabaseClient";
+import { fetchProjectsFromSupabase } from "../lib/supabaseSync";
 
 interface CommunityHubProps {
   userProfile: StudentProfile;
@@ -9,7 +10,12 @@ interface CommunityHubProps {
 }
 
 export default function CommunityHub({ userProfile, onGrantXp }: CommunityHubProps) {
-  const [memberCount, setMemberCount] = useState(117);
+  const [memberCount, setMemberCount] = useState(0);
+  const [termRegistrationCount, setTermRegistrationCount] = useState(0);
+  const [activeTeamsCount, setActiveTeamsCount] = useState(0);
+  const [projectCount, setProjectCount] = useState(0);
+  const [activeMentorsCount, setActiveMentorsCount] = useState(0);
+  
   const [hasFollowed, setHasFollowed] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [spotlightUser, setSpotlightUser] = useState({
@@ -30,13 +36,19 @@ export default function CommunityHub({ userProfile, onGrantXp }: CommunityHubPro
       try {
         if (!isSupabaseConfigured) {
           // Fallback if not configured
-          setCommunityMembers([
+          const fakeMembers = [
             { name: "Jerome K. Maku", role: "S5 Leader / President", xp: 2450, contributions: 25, isLive: true, avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" },
             { name: "Kyobe Arthur", role: "S6 Rep / Systems VP", xp: 1980, contributions: 18, isLive: false, avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80" },
             { name: "Nabulo Maria", role: "S3 Rep / Design Scholar", xp: 1850, contributions: 22, isLive: true, avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80" },
             { name: "Hakim Kavuma", role: "S6 Student / Cadet", xp: 1210, contributions: 12, isLive: false, avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80" },
             { name: "Namazzi Sandra", role: "S2 Rep / Visual Creator", xp: 950, contributions: 9, isLive: false, avatarUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80" }
-          ]);
+          ];
+          setCommunityMembers(fakeMembers);
+          setMemberCount(fakeMembers.length);
+          setTermRegistrationCount(fakeMembers.length);
+          setActiveTeamsCount(3);
+          setProjectCount(5);
+          setActiveMentorsCount(2);
           setLoading(false);
           return;
         }
@@ -48,13 +60,19 @@ export default function CommunityHub({ userProfile, onGrantXp }: CommunityHubPro
 
         if (error || !data || data.length === 0) {
           // If table has 0 rows, use beautiful default list fallback
-          setCommunityMembers([
+          const fakeMembers = [
             { name: "Jerome K. Maku", role: "S5 Leader / President", xp: 2450, contributions: 25, isLive: true, avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" },
             { name: "Kyobe Arthur", role: "S6 Rep / Systems VP", xp: 1980, contributions: 18, isLive: false, avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80" },
             { name: "Nabulo Maria", role: "S3 Rep / Design Scholar", xp: 1850, contributions: 22, isLive: true, avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80" },
             { name: "Hakim Kavuma", role: "S6 Student / Cadet", xp: 1210, contributions: 12, isLive: false, avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80" },
             { name: "Namazzi Sandra", role: "S2 Rep / Visual Creator", xp: 950, contributions: 9, isLive: false, avatarUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80" }
-          ]);
+          ];
+          setCommunityMembers(fakeMembers);
+          setMemberCount(fakeMembers.length);
+          setTermRegistrationCount(fakeMembers.length);
+          setActiveTeamsCount(3);
+          setProjectCount(5);
+          setActiveMentorsCount(2);
         } else {
           const membersList = data.map((p: any) => ({
             name: p.full_name,
@@ -79,7 +97,36 @@ export default function CommunityHub({ userProfile, onGrantXp }: CommunityHubPro
               tags: topUser.role === "president" ? ["React Developer", "UI Designer", "DB Administrator"] : ["ICT Scholar", "Code Ninja", "Submissions Champion"]
             });
           }
-          setMemberCount(112 + data.length);
+          setMemberCount(data.length);
+
+          // Count users registered in the last 90 days (approx. school term length)
+          const termRegs = data.filter((p: any) => {
+            if (!p.created_at) return true;
+            const diffTime = Math.abs(new Date().getTime() - new Date(p.created_at).getTime());
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays <= 90;
+          }).length;
+          setTermRegistrationCount(termRegs);
+
+          // Active mentors are leaders, mentors, vps, or scholars with over 1000 XP
+          const mentors = data.filter((p: any) => 
+            p.role === "mentor" || 
+            p.role === "president" || 
+            p.role === "vp" || 
+            p.xp >= 1000
+          ).length;
+          setActiveMentorsCount(mentors);
+        }
+
+        // Fetch projects to determine actual active teams (categories) and projects count
+        const projects = await fetchProjectsFromSupabase();
+        if (projects) {
+          const uniqueCategories = new Set(projects.map(p => p.category));
+          setActiveTeamsCount(Math.max(1, uniqueCategories.size));
+          setProjectCount(projects.length);
+        } else {
+          setActiveTeamsCount(3);
+          setProjectCount(5);
         }
       } catch (err) {
         console.error("Failed to load community data:", err);
@@ -109,9 +156,11 @@ export default function CommunityHub({ userProfile, onGrantXp }: CommunityHubPro
             <Users2 className="w-4 h-4" />
           </div>
           <span className="text-[10px] uppercase font-mono text-slate-500">Total Members</span>
-          <p className="text-xl sm:text-2xl font-bold text-slate-100 mt-1">{memberCount}</p>
+          <p className="text-xl sm:text-2xl font-bold text-slate-100 mt-1">
+            {loading ? <span className="opacity-40">...</span> : memberCount}
+          </p>
           <span className="text-[9px] text-emerald-400 flex items-center gap-0.5 mt-1 font-mono">
-            +14 registered this term
+            +{termRegistrationCount} registered recently
           </span>
         </div>
 
@@ -120,9 +169,11 @@ export default function CommunityHub({ userProfile, onGrantXp }: CommunityHubPro
             <Award className="w-4 h-4" />
           </div>
           <span className="text-[10px] uppercase font-mono text-slate-500">Active Teams</span>
-          <p className="text-xl sm:text-2xl font-bold text-slate-100 mt-1">5 Teams</p>
+          <p className="text-xl sm:text-2xl font-bold text-slate-100 mt-1">
+            {loading ? <span className="opacity-40">...</span> : `${activeTeamsCount} Teams`}
+          </p>
           <span className="text-[9px] text-slate-400 block mt-1 font-mono">
-            National Expo Prep
+            {projectCount} Project Showcases
           </span>
         </div>
 
@@ -131,9 +182,11 @@ export default function CommunityHub({ userProfile, onGrantXp }: CommunityHubPro
             <Sparkles className="w-4 h-4" />
           </div>
           <span className="text-[10px] uppercase font-mono text-slate-500">Member Spotlight</span>
-          <p className="text-xl sm:text-2xl font-bold text-indigo-400 mt-1">Live • Weekly</p>
+          <p className="text-xl sm:text-2xl font-bold text-indigo-400 mt-1 truncate" title={spotlightUser.name}>
+            {loading ? <span className="opacity-40">...</span> : spotlightUser.name.split(" ")[0]}
+          </p>
           <span className="text-[9px] text-slate-400 block mt-1 font-mono">
-            Highlighted achievements
+            {loading ? "Highlighted achievements" : `${spotlightUser.xp} XP • ${spotlightUser.role.split("/")[0].trim()}`}
           </span>
         </div>
 
@@ -142,9 +195,11 @@ export default function CommunityHub({ userProfile, onGrantXp }: CommunityHubPro
             <ShieldAlert className="w-4 h-4" />
           </div>
           <span className="text-[10px] uppercase font-mono text-slate-500">Active Mentors</span>
-          <p className="text-xl sm:text-2xl font-bold text-emerald-400 mt-1">8 Fellows</p>
+          <p className="text-xl sm:text-2xl font-bold text-emerald-400 mt-1">
+            {loading ? <span className="opacity-40">...</span> : `${activeMentorsCount} Fellows`}
+          </p>
           <span className="text-[9px] text-slate-400 block mt-1 font-mono">
-            Supporting standard labs
+            Supporting labs & peer code
           </span>
         </div>
       </div>
