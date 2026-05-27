@@ -5,7 +5,7 @@ import { MessageSquare, Send, Sparkles } from "lucide-react";
 export default function LiveChat({ userProfile }: any) {
   const [messages, setMessages] = useState<any[]>([]);
   const [text, setText] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchMessages();
@@ -17,7 +17,7 @@ export default function LiveChat({ userProfile }: any) {
         {
           event: "*",
           schema: "public",
-          table: "messages",
+          table: "club_messages",
         },
         () => {
           fetchMessages();
@@ -31,12 +31,14 @@ export default function LiveChat({ userProfile }: any) {
   }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (containerRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    }
   }, [messages]);
 
   async function fetchMessages() {
     const { data } = await supabase
-      .from("messages")
+      .from("club_messages")
       .select("*")
       .order("created_at", {
         ascending: true,
@@ -57,7 +59,7 @@ export default function LiveChat({ userProfile }: any) {
     };
 
     // If there's an issue with the custom structure, we match standard fallback logic safely
-    await supabase.from("messages").insert([payload]);
+    await supabase.from("club_messages").insert([payload]);
 
     setText("");
   }
@@ -79,7 +81,10 @@ export default function LiveChat({ userProfile }: any) {
       </div>
 
       {/* Messages Feed */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-950/25 scrollbar-thin scrollbar-thumb-slate-800">
+      <div
+        ref={containerRef}
+        className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-950/25 scrollbar-thin scrollbar-thumb-slate-800"
+      >
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-4">
             <Sparkles className="w-8 h-8 text-indigo-500/30 mb-2 animate-pulse" />
@@ -115,7 +120,6 @@ export default function LiveChat({ userProfile }: any) {
             );
           })
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Input Tray */}
