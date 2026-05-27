@@ -236,6 +236,28 @@ CREATE POLICY "Anyone can edit challenges"
 -- If tables already exist in your database, run these lines individually 
 -- in the Supabase SQL editor to bring them perfectly in sync without data loss:
 
+-- SEED DATA FOR HONORARY STAHIZZA ICT CLUB ELITE MEMBERS
+-- Copy and run these inside your Supabase SQL Editor to instantly populate community leaderboard profiles!
+-- Note: Inserts matching auth.users with random uuids first to support foreign key constraints.
+
+INSERT INTO auth.users (id, email, raw_user_meta_data) VALUES
+('b19d2cc8-bfcd-44b4-a8fe-359f13d80632', 'jerome@stahizza.edu', '{"full_name": "Jerome K. Maku"}'),
+('c53531b2-ba0a-42cd-9bc9-a8f8d689afc7', 'arthur@stahizza.edu', '{"full_name": "Kyobe Arthur"}'),
+('d53531b2-ba0a-42cd-9bc9-a8f8d689afd8', 'maria@stahizza.edu', '{"full_name": "Nabulo Maria"}'),
+('e53531b2-ba0a-42cd-9bc9-a8f8d689afe9', 'hakim@stahizza.edu', '{"full_name": "Hakim Kavuma"}'),
+('f53531b2-ba0a-42cd-9bc9-a8f8d689aff0', 'sandra@stahizza.edu', '{"full_name": "Namazzi Sandra"}'),
+('a19d2cc8-bfcd-44b4-a8fe-359f13d85631', 'joel@stahizza.edu', '{"full_name": "Atamba Joel"}')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.profiles (id, full_name, username, class_level, role, xp, level, avatar_url, email) VALUES
+('b19d2cc8-bfcd-44b4-a8fe-359f13d80632', 'Jerome K. Maku', 'jerome', 'S5 Leader / President', 'president', 2450, 5, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80', 'jerome@stahizza.edu'),
+('c53531b2-ba0a-42cd-9bc9-a8f8d689afc7', 'Kyobe Arthur', 'arthur', 'S6 Rep / Systems VP', 'vp', 1980, 4, 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80', 'arthur@stahizza.edu'),
+('d53531b2-ba0a-42cd-9bc9-a8f8d689afd8', 'Nabulo Maria', 'maria', 'S3 Rep / Design Scholar', 'designer', 1850, 4, 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80', 'maria@stahizza.edu'),
+('e53531b2-ba0a-42cd-9bc9-a8f8d689afe9', 'Hakim Kavuma', 'hakim', 'S6 Student / Cadet', 'member', 1210, 3, 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80', 'hakim@stahizza.edu'),
+('f53531b2-ba0a-42cd-9bc9-a8f8d689aff0', 'Namazzi Sandra', 'sandra', 'S2 Rep / Visual Creator', 'member', 950, 2, 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80', 'sandra@stahizza.edu'),
+('a19d2cc8-bfcd-44b4-a8fe-359f13d85631', 'Atamba Joel', 'joel', 'Fullstack Leader / S6', 'mentor', 2840, 6, 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80', 'joel@stahizza.edu')
+ON CONFLICT (id) DO NOTHING;
+
 -- Run these if your PROFILES table has obsolete structures:
 -- ALTER TABLE public.profiles RENAME COLUMN name TO full_name;
 -- ALTER TABLE public.profiles RENAME COLUMN avatar_seed TO avatar_url;

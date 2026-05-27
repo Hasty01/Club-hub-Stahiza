@@ -1,6 +1,7 @@
-import React, { useState } from "react";
-import { Users2, Award, ShieldAlert, Sparkles, MessageCircle, Heart, UserPlus, Star, User } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Users2, Award, ShieldAlert, Sparkles, MessageCircle, Heart, UserPlus, Star, User, Loader2 } from "lucide-react";
 import { StudentProfile } from "../types";
+import { supabase, isSupabaseConfigured } from "../lib/supabaseClient";
 
 interface CommunityHubProps {
   userProfile: StudentProfile;
@@ -10,6 +11,7 @@ interface CommunityHubProps {
 export default function CommunityHub({ userProfile, onGrantXp }: CommunityHubProps) {
   const [memberCount, setMemberCount] = useState(117);
   const [hasFollowed, setHasFollowed] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(true);
   const [spotlightUser, setSpotlightUser] = useState({
     name: "Atamba Joel",
     role: "Fullstack Leader / S6",
@@ -21,14 +23,72 @@ export default function CommunityHub({ userProfile, onGrantXp }: CommunityHubPro
   });
 
   const [activeTeamCode, setActiveTeamCode] = useState<string | null>(null);
-  
-  const communityMembers = [
-    { name: "Jerome K. Maku", role: "S5 Leader / President", xp: 2450, contributions: 25, isLive: true, avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" },
-    { name: "Kyobe Arthur", role: "S6 Rep / Systems VP", xp: 1980, contributions: 18, isLive: false, avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80" },
-    { name: "Nabulo Maria", role: "S3 Rep / Design Scholar", xp: 1850, contributions: 22, isLive: true, avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80" },
-    { name: "Hakim Kavuma", role: "S6 Student / Cadet", xp: 1210, contributions: 12, isLive: false, avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80" },
-    { name: "Namazzi Sandra", role: "S2 Rep / Visual Creator", xp: 950, contributions: 9, isLive: false, avatarUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80" }
-  ];
+  const [communityMembers, setCommunityMembers] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchCommunityData() {
+      try {
+        if (!isSupabaseConfigured) {
+          // Fallback if not configured
+          setCommunityMembers([
+            { name: "Jerome K. Maku", role: "S5 Leader / President", xp: 2450, contributions: 25, isLive: true, avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" },
+            { name: "Kyobe Arthur", role: "S6 Rep / Systems VP", xp: 1980, contributions: 18, isLive: false, avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80" },
+            { name: "Nabulo Maria", role: "S3 Rep / Design Scholar", xp: 1850, contributions: 22, isLive: true, avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80" },
+            { name: "Hakim Kavuma", role: "S6 Student / Cadet", xp: 1210, contributions: 12, isLive: false, avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80" },
+            { name: "Namazzi Sandra", role: "S2 Rep / Visual Creator", xp: 950, contributions: 9, isLive: false, avatarUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80" }
+          ]);
+          setLoading(false);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .order("xp", { ascending: false });
+
+        if (error || !data || data.length === 0) {
+          // If table has 0 rows, use beautiful default list fallback
+          setCommunityMembers([
+            { name: "Jerome K. Maku", role: "S5 Leader / President", xp: 2450, contributions: 25, isLive: true, avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" },
+            { name: "Kyobe Arthur", role: "S6 Rep / Systems VP", xp: 1980, contributions: 18, isLive: false, avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80" },
+            { name: "Nabulo Maria", role: "S3 Rep / Design Scholar", xp: 1850, contributions: 22, isLive: true, avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80" },
+            { name: "Hakim Kavuma", role: "S6 Student / Cadet", xp: 1210, contributions: 12, isLive: false, avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80" },
+            { name: "Namazzi Sandra", role: "S2 Rep / Visual Creator", xp: 950, contributions: 9, isLive: false, avatarUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80" }
+          ]);
+        } else {
+          const membersList = data.map((p: any) => ({
+            name: p.full_name,
+            role: p.class_level || "Member",
+            xp: p.xp,
+            contributions: Math.max(3, Math.round(p.xp / 90)),
+            isLive: p.username === "jerome" || p.username === "maria",
+            avatarUrl: p.avatar_url && p.avatar_url.startsWith("http") ? p.avatar_url : null
+          }));
+          setCommunityMembers(membersList);
+
+          // Find the top user for the spotlight (highest XP)
+          const topUser = data[0];
+          if (topUser) {
+            setSpotlightUser({
+              name: topUser.full_name,
+              role: topUser.class_level || "Elite Contributor",
+              bio: topUser.bio || "Recreated the STAHIZZA ICT Club Hub with premium dark appearance and interactive modules. Enthusiastic about databases, API designs, and React.",
+              xp: topUser.xp,
+              contributions: Math.max(5, Math.round(topUser.xp / 90)),
+              avatarUrl: topUser.avatar_url && topUser.avatar_url.startsWith("http") ? topUser.avatar_url : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
+              tags: topUser.role === "president" ? ["React Developer", "UI Designer", "DB Administrator"] : ["ICT Scholar", "Code Ninja", "Submissions Champion"]
+            });
+          }
+          setMemberCount(112 + data.length);
+        }
+      } catch (err) {
+        console.error("Failed to load community data:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchCommunityData();
+  }, []);
 
   const handleFollow = (name: string) => {
     setHasFollowed(prev => {
@@ -176,9 +236,13 @@ export default function CommunityHub({ userProfile, onGrantXp }: CommunityHubPro
               WEEKLY SPOTLIGHT
             </span>
 
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-pink-500 to-indigo-500 p-0.5 mx-auto">
-              <div className="w-full h-full bg-slate-950 rounded-2xl flex items-center justify-center text-4xl">
-                👨🏾‍💻
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-pink-500 to-indigo-500 p-0.5 mx-auto overflow-hidden">
+              <div className="w-full h-full bg-slate-950 rounded-2xl flex items-center justify-center overflow-hidden">
+                {spotlightUser.avatarUrl ? (
+                  <img src={spotlightUser.avatarUrl} className="w-full h-full object-cover rounded-2xl" alt={spotlightUser.name} referrerPolicy="no-referrer" />
+                ) : (
+                  <span className="text-4xl">👨🏾‍💻</span>
+                )}
               </div>
             </div>
 
