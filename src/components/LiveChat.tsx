@@ -1,8 +1,10 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { MessageSquare, Send, Sparkles, Check, CheckCheck, Smile, Bell } from "lucide-react";
+import { MessageSquare, Send, Sparkles, Check, CheckCheck, Smile, Bell, MessageCircle, Users } from "lucide-react";
+import PrivateDMs from "./PrivateDMs";
 
 export default function LiveChat({ userProfile }: any) {
+  const [activeTab, setActiveTab] = useState<"club" | "p2p">("club");
   const [messages, setMessages] = useState<any[]>([]);
   const [text, setText] = useState("");
   const [authUserId, setAuthUserId] = useState<string | null>(null);
@@ -335,24 +337,59 @@ export default function LiveChat({ userProfile }: any) {
   return (
     <div className="flex flex-col h-[550px] bg-slate-900/40 border border-slate-800/80 rounded-2xl overflow-hidden font-sans relative">
       {/* Header */}
-      <div className="p-4 bg-slate-950/60 border-b border-slate-800/80 flex items-center justify-between">
+      <div className="p-3 bg-slate-950/60 border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-2">
           <MessageSquare className="w-4 h-4 text-pink-500" />
           <h4 className="text-xs font-bold font-sans text-slate-200 uppercase tracking-wider">
-            ICT CLUB LIVE BULLETIN & CHAT
+            STAHIZZA COMMUNICATOR
           </h4>
         </div>
-        <span className="flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+
+        {/* Tab Controls */}
+        <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-850 shrink-0 select-none">
+          <button
+            type="button"
+            onClick={() => setActiveTab("club")}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all duration-150 ${
+              activeTab === "club"
+                ? "bg-gradient-to-r from-pink-500 to-indigo-600 text-slate-100 shadow-md shadow-pink-900/25"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Users className="w-3.5 h-3.5" />
+            <span>Club Chat</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("p2p")}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all duration-150 ${
+              activeTab === "p2p"
+                ? "bg-gradient-to-r from-pink-500 to-indigo-600 text-slate-100 shadow-md shadow-pink-900/25"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <MessageCircle className="w-3.5 h-3.5" />
+            <span>Scholar DMs</span>
+          </button>
+        </div>
+
+        <span className="hidden sm:flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
           <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-ping" />
           Realtime Live
         </span>
       </div>
 
-      {/* Messages Feed */}
-      <div
-        ref={containerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-950/25 scrollbar-thin scrollbar-thumb-slate-800"
-      >
+      {activeTab === "p2p" ? (
+        <div className="flex-1 min-h-0 bg-slate-950/15">
+          <PrivateDMs userProfile={userProfile} />
+        </div>
+      ) : (
+        <>
+          {/* Messages Feed */}
+          <div
+            ref={containerRef}
+            className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-950/25 scrollbar-thin scrollbar-thumb-slate-800"
+          >
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-4">
             <Sparkles className="w-8 h-8 text-indigo-500/30 mb-2 animate-pulse" />
@@ -566,6 +603,8 @@ export default function LiveChat({ userProfile }: any) {
           <Send className="w-3.5 h-3.5" />
         </button>
       </form>
+        </>
+      )}
 
       {/* Floating Real-time In-app Notification Alert Toast */}
       {toast && (
