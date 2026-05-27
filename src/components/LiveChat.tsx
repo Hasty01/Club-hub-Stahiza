@@ -265,24 +265,21 @@ export default function LiveChat({ userProfile }: any) {
 
     // Fetch the real underlying Supabase auth user
     const { data: { user } } = await supabase.auth.getUser();
-    const rawProfileId = userProfile?.id || authUserId || user?.id;
-    
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawProfileId || "");
-    const resolvedProfileId = isUuid ? rawProfileId : null;
+    if (!user) return;
 
     const payload: any = {
-      profile_id: resolvedProfileId,
-      sender_id: user?.id || resolvedProfileId,
-      username: userProfile?.name || userProfile?.username || "Companion",
-      avatar_url: userProfile?.avatarUrl || userProfile?.avatar_url || "https://placehold.co/100",
-      message: text,
       content: text,
-      seen_by: [user?.id || resolvedProfileId].filter(Boolean),
+      message: text, // Safe helper fallback for any transitional schema version
+      sender_id: user.id,
+      username: userProfile?.username || userProfile?.name || user.email || "Companion",
+      avatar_url: userProfile?.avatarUrl || userProfile?.avatar_url || "",
+      role: userProfile?.role || "member",
+      seen_by: [user.id]
     };
 
     const { error } = await supabase.from("club_messages").insert([payload]);
     if (error) {
-      console.error("Failed to insert live message:", error);
+      console.log(error);
     }
 
     setText("");
