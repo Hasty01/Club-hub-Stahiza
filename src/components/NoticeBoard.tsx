@@ -31,28 +31,46 @@ export default function NoticeBoard({
 
   useEffect(() => {
     fetchNotices();
+
+    const channel = supabase
+      .channel("club-feed-live")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "club_feed",
+        },
+        (payload) => {
+          console.log(
+            "Realtime update:",
+            payload
+          );
+          fetchNotices();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   async function fetchNotices() {
-
-    const { data, error } =
-      await supabase
-        .from("club_feed")
-        .select("*")
-        .order("created_at", {
-          ascending: false,
-        });
-
-    if (error) {
-      console.log(
-        "Supabase Notices Fetch Error:",
-        error
-      );
-      return;
+    if (!isSupabaseConfigured) return;
+    setDbLoading(true);
+    try {
+      const data = await fetchNoticesFromSupabase();
+      if (data) {
+        setNotices(data);
+      }
+    } catch (err) {
+      console.log("Supabase Notices Fetch Error:", err);
+    } finally {
+      setDbLoading(false);
     }
-
-    setNotices(data || []);
   }
+
   // Sync notice post role dynamically with Simulated system role
   useEffect(() => {
     if (userProfile.role === "president") {
@@ -63,71 +81,6 @@ export default function NoticeBoard({
       setSubmissionRole("Student");
     }
   }, [userProfile.role]);
-
-  // Fetch from Supabase and subscribe to realtime updates of club_feed
-  useEffect(() => {
-    async function loadNotices() {
-      if (!isSupabaseConfigured) return;
-      setDbLoading(true);
-      const data = await fetchNoticesFromSupabase();
-      if (data && data.length > 0) {
-        setNotices(data);
-      }
-      setDbLoading(false);
-    }
-
-    loadNotices();
-
-    if (!isSupabaseConfigured) return;
-
-    // Realtime postgres changes subscription
-    const channel = supabase
-      .channel("club-feed-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "club_feed" },
-        (payload) => {
-          if (payload.eventType === "INSERT") {
-            const newNotice: Notice = {
-              id: payload.new.id,
-              author: payload.new.author,
-              role: payload.new.role,
-              content: payload.new.content,
-              likes: payload.new.likes || 0,
-              timestamp: payload.new.timestamp || "Just now",
-              isPinned: payload.new.is_pinned,
-            };
-            setNotices((prev) => {
-              // Guard against duplicates: see real-time-and-multi-user skill
-              if (prev.some((n) => n.id === newNotice.id)) return prev;
-              const merged = [newNotice, ...prev];
-              // Keep pinned ones at top
-              return merged.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
-            });
-          } else if (payload.eventType === "UPDATE") {
-            setNotices((prev) =>
-              prev.map((n) =>
-                n.id === payload.new.id
-                  ? {
-                      ...n,
-                      likes: payload.new.likes ?? n.likes,
-                      content: payload.new.content ?? n.content,
-                      isPinned: payload.new.is_pinned ?? n.isPinned,
-                    }
-                  : n
-              )
-            );
-          } else if (payload.eventType === "DELETE") {
-            setNotices((prev) => prev.filter((n) => n.id !== payload.old.id));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
 
   const handleCreateNotice = async (e: React.FormEvent) => {
     e.preventDefault();
