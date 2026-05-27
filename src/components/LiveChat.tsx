@@ -5,10 +5,18 @@ import { MessageSquare, Send, Sparkles } from "lucide-react";
 export default function LiveChat({ userProfile }: any) {
   const [messages, setMessages] = useState<any[]>([]);
   const [text, setText] = useState("");
+  const [authUserId, setAuthUserId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchMessages();
+
+    // Fetch the real underlying Supabase auth user if available
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user) {
+        setAuthUserId(data.user.id);
+      }
+    });
 
     const channel = supabase
       .channel("live-chat")
@@ -51,15 +59,25 @@ export default function LiveChat({ userProfile }: any) {
   async function sendMessage() {
     if (!text.trim()) return;
 
+    // Direct active session matching, then mapped local profile parameter
+    const rawProfileId = userProfile?.id || authUserId;
+    
+    // Strict UUID validation checklist to prevent Postgres uuid format cast errors
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawProfileId || "");
+    const resolvedProfileId = isUuid ? rawProfileId : null;
+
     const payload: any = {
-      profile_id: userProfile?.id,
+      profile_id: resolvedProfileId,
       username: userProfile?.name || userProfile?.username || "Companion",
       avatar_url: userProfile?.avatarUrl || userProfile?.avatar_url || "Sandra",
       message: text,
     };
 
     // If there's an issue with the custom structure, we match standard fallback logic safely
-    await supabase.from("club_messages").insert([payload]);
+    const { error } = await supabase.from("club_messages").insert([payload]);
+    if (error) {
+      console.error("Failed to insert live message:", error);
+    }
 
     setText("");
   }

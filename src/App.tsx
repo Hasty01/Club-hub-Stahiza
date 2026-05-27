@@ -217,6 +217,7 @@ export default function App() {
           .join(" ") : "Student Scholar";
 
         const initProfile: StudentProfile = {
+          id: user.id,
           name: cleanName,
           classLevel: "Senior 5",
           xp: 120,

@@ -60,6 +60,7 @@ export interface DbAttendanceLog {
 // Map database snake_case keys to local typescript camelCase schemas:
 export function mapProfileFromDb(db: DbProfile): StudentProfile {
   return {
+    id: db.id,
     name: db.full_name || "Unknown Pupil",
     classLevel: db.class_level || "Senior 5",
     xp: db.xp !== undefined && db.xp !== null ? db.xp : 120,

@@ -5,6 +5,7 @@ export interface Message {
 }
 
 export interface StudentProfile {
+  id?: string;
   name: string;
   classLevel: string; // e.g., "Senior 1", "Senior 3", "Senior 5", "Patron/Teacher"
   xp: number;
