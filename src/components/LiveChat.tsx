@@ -189,13 +189,13 @@ export default function LiveChat({ userProfile }: any) {
       if (!currentUserId || loadedMessages.length === 0) return;
 
       const unseen = loadedMessages.filter(
-        (m) => m.id && m.sender_id !== currentUserId && (!m.seen_by || !m.seen_by.includes(currentUserId))
+        (m) => m.id && m.sender_id !== currentUserId && (!m.seen_by || !Array.isArray(m.seen_by) || !m.seen_by.includes(currentUserId))
       );
 
       if (unseen.length === 0) return;
 
       for (const m of unseen) {
-        const currentSeenBy = m.seen_by || [];
+        const currentSeenBy = Array.isArray(m.seen_by) ? m.seen_by : [];
         if (!currentSeenBy.includes(currentUserId)) {
           const nextSeenBy = [...currentSeenBy, currentUserId];
           await supabase
@@ -442,10 +442,10 @@ export default function LiveChat({ userProfile }: any) {
                 {/* Seen status tracker */}
                 {isUserM && msg.id && (
                   <div className="flex items-center gap-1 text-[8px] text-slate-500 font-mono mt-0.5 select-none">
-                    {msg.seen_by && msg.seen_by.filter((id: string) => id !== currentUserId).length > 0 ? (
+                    {msg.seen_by && Array.isArray(msg.seen_by) && msg.seen_by.some((id: string) => id !== currentUserId) ? (
                       <>
-                        <CheckCheck className="w-2.5 h-2.5 text-emerald-400 shrink-0" />
-                        <span>Seen by {msg.seen_by.filter((id: string) => id !== currentUserId).length}</span>
+                        <CheckCheck className="w-2.5 h-2.5 text-pink-400 shrink-0" strokeWidth={3} />
+                        <span>Seen</span>
                       </>
                     ) : (
                       <>
