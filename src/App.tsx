@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 
 // Import modular subcomponents safely
-import TutorChat from "./components/TutorChat";
+import LiveChat from "./components/LiveChat";
 import CodeSandbox from "./components/CodeSandbox";
 import QuestsTrivia from "./components/QuestsTrivia";
 import NoticeBoard from "./components/NoticeBoard";
@@ -867,13 +867,12 @@ export default function App() {
             <div className="space-y-6 animate-fadeIn">
               <div>
                 <h2 className="text-lg font-bold font-sans text-slate-100">Syllabus Chat Lounge</h2>
-                <p className="text-xs text-slate-400 font-mono">Collaborate with peers, ask questions, or direct queries to our active AI Learning Nodule.</p>
+                <p className="text-xs text-slate-400 font-mono">Collaborate live with peer scholars & cabinets in real-time. No manual refresh needed.</p>
               </div>
 
-              <TutorChat
-                userProfile={userProfile}
-                onGrantXp={handleGrantXp}
-              />
+              <div className="min-h-[550px]">
+                <LiveChat userProfile={userProfile} />
+              </div>
             </div>
           )}
 

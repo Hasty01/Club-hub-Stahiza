@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { StudentProfile } from "../types";
+import LiveChat from "../components/LiveChat";
 import { 
   Trophy, 
   Award, 
@@ -984,6 +985,9 @@ export default function Dashboard({ userProfile, onNavigateToTab, onLogout, onUp
               })}
             </div>
           </div>
+
+          {/* Live Chat System */}
+          <LiveChat userProfile={userProfile} />
 
           {/* Quick Actions Router shortcuts */}
           <div id="quick-actions-card" className="bg-slate-900/40 border border-slate-800/80 p-5 rounded-2xl">
