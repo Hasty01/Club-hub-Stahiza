@@ -9,6 +9,7 @@ export default function LiveChat({ userProfile }: any) {
   const [typingUsers, setTypingUsers] = useState<any[]>([]);
   const [reactions, setReactions] = useState<any[]>([]);
   const [toast, setToast] = useState<{ title: string; content: string } | null>(null);
+  const [activePickerMessageId, setActivePickerMessageId] = useState<string | null>(null);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<any>(null);
@@ -401,15 +402,60 @@ export default function LiveChat({ userProfile }: any) {
                         type="button"
                         onClick={() => toggleReaction(msg.id, emoji)}
                         className="text-xs w-5 h-5 flex items-center justify-center hover:scale-125 transition-transform"
+                        title={emoji}
                       >
                         {emoji}
                       </button>
                     ))}
+                    <button
+                      type="button"
+                      onClick={() => setActivePickerMessageId(activePickerMessageId === msg.id ? null : msg.id)}
+                      className="text-slate-400 hover:text-pink-400 w-5 h-5 flex items-center justify-center hover:scale-125 transition-transform border-l border-slate-800 pl-1 ml-0.5"
+                      title="More reactions..."
+                    >
+                      <Smile className="w-3 h-3" />
+                    </button>
                   </div>
+
+                  {/* Live Emoji Picker Popover */}
+                  {activePickerMessageId === msg.id && (
+                    <div className={`absolute z-30 bottom-full mb-2 ${isUserM ? "right-0" : "left-0"} bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-3 w-56 animate-in fade-in slide-in-from-bottom-2 duration-150`}>
+                      <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-800/80">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">React with Emoji</span>
+                        <button
+                          onClick={() => setActivePickerMessageId(null)}
+                          type="button"
+                          className="text-[10px] text-slate-500 hover:text-slate-350 px-1"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-6 gap-1.5 max-h-40 overflow-y-auto pr-0.5">
+                        {[
+                          "👍", "👎", "❤️", "🔥", "😂", "😮", 
+                          "😢", "😡", "🙌", "👏", "🎉", "🚀", 
+                          "👀", "💯", "🤔", "😭", "🥰", "💀", 
+                          "✨", "👑", "🌟", "💡", "💖", "🎯"
+                        ].map((emoji) => (
+                          <button
+                            key={emoji}
+                            type="button"
+                            onClick={() => {
+                              toggleReaction(msg.id, emoji);
+                              setActivePickerMessageId(null);
+                            }}
+                            className="text-base w-7 h-7 flex items-center justify-center hover:bg-slate-800 hover:scale-115 rounded-lg transition-all duration-100"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Display reactions tray under bubble */}
-                {msgReactions.length > 0 && (
+                {(msgReactions.length > 0) && (
                   <div className="flex flex-wrap gap-1 mt-1">
                     {Object.entries(
                       msgReactions.reduce((acc: any, r: any) => {
@@ -436,25 +482,47 @@ export default function LiveChat({ userProfile }: any) {
                         </button>
                       );
                     })}
+                    {/* Add reaction plus button inside list */}
+                    <button
+                      type="button"
+                      onClick={() => setActivePickerMessageId(activePickerMessageId === msg.id ? null : msg.id)}
+                      className="flex items-center justify-center w-5 h-5 rounded-full border border-dashed border-slate-700 hover:border-pink-500 text-slate-500 hover:text-pink-400 text-[10px] transition-colors bg-slate-950/40"
+                      title="Add reaction"
+                    >
+                      +
+                    </button>
                   </div>
                 )}
 
-                {/* Seen status tracker */}
-                {isUserM && msg.id && (
-                  <div className="flex items-center gap-1 text-[8px] text-slate-500 font-mono mt-0.5 select-none">
-                    {msg.seen_by && Array.isArray(msg.seen_by) && msg.seen_by.some((id: string) => id !== currentUserId) ? (
-                      <>
-                        <CheckCheck className="w-2.5 h-2.5 text-pink-400 shrink-0" strokeWidth={3} />
-                        <span>Seen</span>
-                      </>
-                    ) : (
-                      <>
-                        <Check className="w-2.5 h-2.5 text-slate-600 shrink-0" />
-                        <span>Sent</span>
-                      </>
-                    )}
-                  </div>
-                )}
+                {/* Seen status and tactile mini-picker row */}
+                <div className="flex items-center gap-1.5 mt-1 text-[8px] text-slate-500 font-mono select-none">
+                  <button
+                    type="button"
+                    onClick={() => setActivePickerMessageId(activePickerMessageId === msg.id ? null : msg.id)}
+                    className="p-0.5 text-slate-500 hover:text-pink-400 transition-colors flex items-center"
+                    title="Add reaction"
+                  >
+                    <Smile className="w-2.5 h-2.5" />
+                  </button>
+                  <span>•</span>
+                  {isUserM && msg.id ? (
+                    <div className="flex items-center gap-1">
+                      {msg.seen_by && Array.isArray(msg.seen_by) && msg.seen_by.some((id: string) => id !== currentUserId) ? (
+                        <>
+                          <CheckCheck className="w-2.5 h-2.5 text-pink-400 shrink-0" strokeWidth={3} />
+                          <span>Seen</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-2.5 h-2.5 text-slate-600 shrink-0" />
+                          <span>Sent</span>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <span>Received</span>
+                  )}
+                </div>
               </div>
             );
           })
