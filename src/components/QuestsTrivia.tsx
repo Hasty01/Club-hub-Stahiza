@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Quest, StudentProfile } from "../types";
-import { INITIAL_QUESTS } from "../data";
-import { Award, Check, X, ArrowRight, BookOpen, RotateCcw, HelpCircle, Trophy } from "lucide-react";
+import { Award, Check, X, ArrowRight, BookOpen, RotateCcw, HelpCircle, Trophy, Loader2 } from "lucide-react";
+import { fetchQuestsFromSupabase } from "../lib/supabaseSync";
 
 interface QuestsProps {
   userProfile: StudentProfile;
@@ -10,13 +10,31 @@ interface QuestsProps {
 }
 
 export default function QuestsTrivia({ userProfile, onGrantXp, onUnlockBadge }: QuestsProps) {
+  const [quests, setQuests] = useState<Quest[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [selectedOptIndex, setSelectedOptIndex] = useState<number | null>(null);
   const [hasChecked, setHasChecked] = useState(false);
   const [score, setScore] = useState(0);
   const [completed, setCompleted] = useState(false);
 
-  const activeQuest = INITIAL_QUESTS[currentIdx];
+  useEffect(() => {
+    async function loadQuests() {
+      try {
+        const data = await fetchQuestsFromSupabase();
+        if (data && data.length > 0) {
+          setQuests(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch quests:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadQuests();
+  }, []);
+
+  const activeQuest = quests[currentIdx];
 
   const handleSelectOption = (optIdx: number) => {
     if (hasChecked) return;
@@ -24,7 +42,7 @@ export default function QuestsTrivia({ userProfile, onGrantXp, onUnlockBadge }: 
   };
 
   const verifyChoice = () => {
-    if (selectedOptIndex === null || hasChecked) return;
+    if (selectedOptIndex === null || hasChecked || !activeQuest) return;
     setHasChecked(true);
 
     const isCorrect = selectedOptIndex === activeQuest.correctAnswerIndex;
@@ -43,7 +61,7 @@ export default function QuestsTrivia({ userProfile, onGrantXp, onUnlockBadge }: 
     setSelectedOptIndex(null);
     setHasChecked(false);
 
-    if (currentIdx + 1 < INITIAL_QUESTS.length) {
+    if (currentIdx + 1 < quests.length) {
       setCurrentIdx(prev => prev + 1);
     } else {
       setCompleted(true);
@@ -59,6 +77,27 @@ export default function QuestsTrivia({ userProfile, onGrantXp, onUnlockBadge }: 
     setCompleted(false);
   };
 
+  if (loading) {
+    return (
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center flex flex-col items-center justify-center gap-2">
+        <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+        <p className="text-sm font-mono text-slate-400">Loading syllabus quests from database...</p>
+      </div>
+    );
+  }
+
+  if (quests.length === 0) {
+    return (
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center flex flex-col items-center justify-center gap-3">
+        <HelpCircle className="w-8 h-8 text-indigo-400 animate-pulse" />
+        <div>
+          <p className="text-sm font-sans text-slate-200 font-medium">No trivia quests available in the database yet.</p>
+          <p className="text-xs font-mono text-slate-500 mt-1">Populate the 'quests' table in Supabase to sync them here.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl p-6">
       {!completed ? (
@@ -73,11 +112,11 @@ export default function QuestsTrivia({ userProfile, onGrantXp, onUnlockBadge }: 
               </div>
             </div>
             <div className="text-right">
-              <span className="text-xs font-mono text-slate-400">Question {currentIdx + 1} of {INITIAL_QUESTS.length}</span>
+              <span className="text-xs font-mono text-slate-400">Question {currentIdx + 1} of {quests.length}</span>
               <div className="w-32 bg-slate-950 h-1.5 rounded-full mt-1.5 overflow-hidden">
                 <div 
                   className="bg-indigo-600 h-full rounded-full transition-all duration-300"
-                  style={{ width: `${((currentIdx + 1) / INITIAL_QUESTS.length) * 100}%` }}
+                  style={{ width: `${((currentIdx + 1) / quests.length) * 100}%` }}
                 />
               </div>
             </div>
@@ -164,7 +203,7 @@ export default function QuestsTrivia({ userProfile, onGrantXp, onUnlockBadge }: 
                   onClick={handleNext}
                   className="bg-indigo-600 hover:bg-indigo-500 text-slate-100 text-xs font-sans px-5 py-2 rounded-xl transition-all font-semibold flex items-center gap-1.5"
                 >
-                  <span>{currentIdx + 1 === INITIAL_QUESTS.length ? "Finish Quests" : "Next Quest"}</span>
+                  <span>{currentIdx + 1 === quests.length ? "Finish Quests" : "Next Quest"}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               )}
@@ -195,7 +234,7 @@ export default function QuestsTrivia({ userProfile, onGrantXp, onUnlockBadge }: 
           <div className="bg-slate-950 max-w-md mx-auto p-4 rounded-xl border border-slate-800 grid grid-cols-2 gap-4">
             <div>
               <span className="text-[10px] font-mono uppercase text-slate-500">Total Score</span>
-              <p className="text-2xl font-bold text-slate-200 mt-1">{score} / {INITIAL_QUESTS.length}</p>
+              <p className="text-2xl font-bold text-slate-200 mt-1">{score} / {quests.length}</p>
             </div>
             <div>
               <span className="text-[10px] font-mono uppercase text-slate-500">Unlocks Achieved</span>

@@ -184,6 +184,52 @@ CREATE POLICY "Anyone can publish or update events"
     ON public.club_events FOR ALL USING (true);
 
 
+-- 9. QUESTS Table (Syllabus Quests / Trivia)
+CREATE TABLE IF NOT EXISTS public.quests (
+    id TEXT PRIMARY KEY,
+    topic TEXT NOT NULL,
+    difficulty TEXT NOT NULL,
+    question TEXT NOT NULL,
+    options TEXT[] NOT NULL DEFAULT '{}',
+    correct_answer_index INTEGER NOT NULL,
+    explanation TEXT NOT NULL,
+    xp_reward INTEGER NOT NULL DEFAULT 30,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.quests ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Quests are viewable by everyone" 
+    ON public.quests FOR SELECT USING (true);
+
+CREATE POLICY "Anyone can edit quests" 
+    ON public.quests FOR ALL USING (true);
+
+
+-- 10. CODE CHALLENGES Table (Online Code Sandbox Challenges)
+CREATE TABLE IF NOT EXISTS public.code_challenges (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    difficulty TEXT NOT NULL,
+    initial_code TEXT NOT NULL,
+    solution_regex TEXT NOT NULL,
+    test_instructions TEXT NOT NULL,
+    category TEXT NOT NULL,
+    xp_reward INTEGER NOT NULL DEFAULT 40,
+    hint TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.code_challenges ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Challenges are viewable by everyone" 
+    ON public.code_challenges FOR SELECT USING (true);
+
+CREATE POLICY "Anyone can edit challenges" 
+    ON public.code_challenges FOR ALL USING (true);
+
+
 -- ==========================================
 -- BONUS SCHEMA EVOLUTION / MIGRATION CLINIC
 -- ==========================================

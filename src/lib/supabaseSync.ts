@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from "./supabaseClient";
-import { StudentProfile, Notice } from "../types";
+import { StudentProfile, Notice, Quest, CodeChallenge } from "../types";
 
 // Standard types matching DB tables:
 export interface DbProfile {
@@ -599,6 +599,68 @@ export async function fetchLeaderboardFromSupabase(): Promise<any[] | null> {
 
     return data;
   } catch (err) {
+    return null;
+  }
+}
+
+// Fetch Quests from Supabase (Trivia database)
+export async function fetchQuestsFromSupabase(): Promise<Quest[] | null> {
+  if (!isSupabaseConfigured) return null;
+  try {
+    const { data, error } = await supabase
+      .from("quests")
+      .select("*")
+      .order("id", { ascending: true });
+
+    if (error) {
+      console.error("Supabase Quests Fetch Error:", error);
+      return null;
+    }
+
+    return data.map((q: any) => ({
+      id: q.id,
+      topic: q.topic,
+      difficulty: q.difficulty,
+      question: q.question,
+      options: q.options || [],
+      correctAnswerIndex: q.correct_answer_index,
+      explanation: q.explanation,
+      xpReward: q.xp_reward,
+    }));
+  } catch (err) {
+    console.error("Supabase Quests Fetch Exception:", err);
+    return null;
+  }
+}
+
+// Fetch Code Challenges from Supabase (Sandbox challenges)
+export async function fetchCodeChallengesFromSupabase(): Promise<CodeChallenge[] | null> {
+  if (!isSupabaseConfigured) return null;
+  try {
+    const { data, error } = await supabase
+      .from("code_challenges")
+      .select("*")
+      .order("id", { ascending: true });
+
+    if (error) {
+      console.error("Supabase Challenges Fetch Error:", error);
+      return null;
+    }
+
+    return data.map((c: any) => ({
+      id: c.id,
+      title: c.title,
+      description: c.description,
+      difficulty: c.difficulty,
+      initialCode: c.initial_code,
+      solutionRegex: c.solution_regex,
+      testInstructions: c.test_instructions,
+      category: c.category,
+      xpReward: c.xp_reward,
+      hint: c.hint,
+    }));
+  } catch (err) {
+    console.error("Supabase Challenges Fetch Exception:", err);
     return null;
   }
 }

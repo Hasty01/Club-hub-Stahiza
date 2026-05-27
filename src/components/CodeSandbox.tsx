@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { CodeChallenge, StudentProfile } from "../types";
-import { INITIAL_CHALLENGES } from "../data";
-import { Terminal, Bug, Play, CheckCircle, RefreshCw, BookOpen, AlertCircle, Sparkles } from "lucide-react";
+import { Terminal, Bug, Play, CheckCircle, RefreshCw, BookOpen, AlertCircle, Sparkles, Loader2 } from "lucide-react";
+import { fetchCodeChallengesFromSupabase } from "../lib/supabaseSync";
 
 interface CodeSandboxProps {
   userProfile: StudentProfile;
@@ -10,6 +10,8 @@ interface CodeSandboxProps {
 }
 
 export default function CodeSandbox({ userProfile, onGrantXp, onUnlockBadge }: CodeSandboxProps) {
+  const [challenges, setChallenges] = useState<CodeChallenge[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedChallengeId, setSelectedChallengeId] = useState<string>("free");
   const [code, setCode] = useState<string>(`<!-- Free Play Mode -->
 <div style="padding: 24px; text-align: center; font-family: 'Inter', sans-serif;">
@@ -20,6 +22,22 @@ export default function CodeSandbox({ userProfile, onGrantXp, onUnlockBadge }: C
   const [currentHint, setCurrentHint] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    async function loadChallenges() {
+      try {
+        const data = await fetchCodeChallengesFromSupabase();
+        if (data && data.length > 0) {
+          setChallenges(data);
+        }
+      } catch (err) {
+        console.error("Failed to load challenges:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadChallenges();
+  }, []);
 
   // Set code when challenge changes
   useEffect(() => {
@@ -33,16 +51,16 @@ export default function CodeSandbox({ userProfile, onGrantXp, onUnlockBadge }: C
       setTestResult(null);
       setCurrentHint(null);
     } else {
-      const challenge = INITIAL_CHALLENGES.find(c => c.id === selectedChallengeId);
+      const challenge = challenges.find(c => c.id === selectedChallengeId);
       if (challenge) {
         setCode(challenge.initialCode);
         setTestResult(null);
         setCurrentHint(null);
       }
     }
-  }, [selectedChallengeId]);
+  }, [selectedChallengeId, challenges]);
 
-  const activeChallenge = INITIAL_CHALLENGES.find(c => c.id === selectedChallengeId);
+  const activeChallenge = challenges.find(c => c.id === selectedChallengeId);
 
   // Compile full document safely for iframe preview
   const getPreviewDocument = () => {
@@ -151,39 +169,46 @@ export default function CodeSandbox({ userProfile, onGrantXp, onUnlockBadge }: C
               <p className="text-[11px] text-slate-500">Practice writing HTML, CSS, or interactive sandbox layouts freely.</p>
             </button>
 
-            {INITIAL_CHALLENGES.map((challenge) => {
-              const isSolved = userProfile.solvedChallengeIds.includes(challenge.id);
-              return (
-                <button
-                  key={challenge.id}
-                  onClick={() => setSelectedChallengeId(challenge.id)}
-                  className={`w-full text-left p-3 rounded-lg border text-xs transition-all ${
-                    selectedChallengeId === challenge.id
-                      ? "bg-indigo-600/15 border-indigo-500 text-indigo-300"
-                      : "bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-medium flex items-center gap-1.5">
-                      {challenge.title}
-                      {isSolved && <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
-                    </span>
-                    <span className={`text-[9px] uppercase font-mono px-1.5 py-0.5 rounded ${
-                      challenge.difficulty === "Beginner" ? "bg-emerald-500/10 text-emerald-400" :
-                      challenge.difficulty === "Intermediate" ? "bg-amber-500/10 text-amber-400" :
-                      "bg-rose-500/10 text-rose-400"
-                    }`}>
-                      {challenge.difficulty}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 line-clamp-2">{challenge.description}</p>
-                  <div className="mt-2 flex items-center justify-between text-[10px] font-mono text-slate-400 border-t border-slate-800/60 pt-1.5">
-                    <span>XP Reward: +{challenge.xpReward}</span>
-                    <span className="text-indigo-400/90 bg-indigo-500/10 px-1.5 py-0.5 rounded text-[9px]">{challenge.category}</span>
-                  </div>
-                </button>
-              );
-            })}
+            {loading ? (
+              <div className="py-6 text-center text-slate-500 font-mono text-xs flex items-center justify-center gap-1.5">
+                <Loader2 className="w-3.5 h-3.5 text-indigo-400 animate-spin" />
+                <span>Loading challenges...</span>
+              </div>
+            ) : (
+              challenges.map((challenge) => {
+                const isSolved = userProfile.solvedChallengeIds.includes(challenge.id);
+                return (
+                  <button
+                    key={challenge.id}
+                    onClick={() => setSelectedChallengeId(challenge.id)}
+                    className={`w-full text-left p-3 rounded-lg border text-xs transition-all ${
+                      selectedChallengeId === challenge.id
+                        ? "bg-indigo-600/15 border-indigo-500 text-indigo-300"
+                        : "bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium flex items-center gap-1.5">
+                        {challenge.title}
+                        {isSolved && <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
+                      </span>
+                      <span className={`text-[9px] uppercase font-mono px-1.5 py-0.5 rounded ${
+                        challenge.difficulty === "Beginner" ? "bg-emerald-500/10 text-emerald-400" :
+                        challenge.difficulty === "Intermediate" ? "bg-amber-500/10 text-amber-400" :
+                        "bg-rose-500/10 text-rose-400"
+                      }`}>
+                        {challenge.difficulty}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 line-clamp-2">{challenge.description}</p>
+                    <div className="mt-2 flex items-center justify-between text-[10px] font-mono text-slate-400 border-t border-slate-800/60 pt-1.5">
+                      <span>XP Reward: +{challenge.xpReward}</span>
+                      <span className="text-indigo-400/90 bg-indigo-500/10 px-1.5 py-0.5 rounded text-[9px]">{challenge.category}</span>
+                    </div>
+                  </button>
+                );
+              })
+            )}
           </div>
         </div>
 
