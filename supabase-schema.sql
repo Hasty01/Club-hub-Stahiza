@@ -162,6 +162,28 @@ CREATE POLICY "Anyone can send a message"
     ON public.messages FOR INSERT WITH CHECK (role IN ('user', 'model'));
 
 
+-- 8. CLUB EVENTS Table (Schedules of activities & workshops)
+CREATE TABLE IF NOT EXISTS public.club_events (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    date TEXT NOT NULL,
+    time TEXT NOT NULL,
+    location TEXT NOT NULL,
+    description TEXT NOT NULL,
+    type TEXT NOT NULL,
+    host TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.club_events ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Events are viewable by everyone" 
+    ON public.club_events FOR SELECT USING (true);
+
+CREATE POLICY "Anyone can publish or update events" 
+    ON public.club_events FOR ALL USING (true);
+
+
 -- ==========================================
 -- BONUS SCHEMA EVOLUTION / MIGRATION CLINIC
 -- ==========================================

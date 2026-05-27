@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { StudentProfile } from "./types";
-import { TOP_MEMBERS, INITIAL_EVENTS, AVATAR_PRESETS } from "./data";
 import { supabase, isSupabaseConfigured } from "./lib/supabaseClient";
 import { fetchProfileFromSupabase, saveProfileToSupabase, fetchProfileByEmail } from "./lib/supabaseSync";
 import { useAuth } from "./context/AuthContext";
@@ -107,6 +106,69 @@ export default function App() {
   });
 
   const [levelUpMessage, setLevelUpMessage] = useState<string | null>(null);
+  const [events, setEvents] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function loadEvents() {
+      if (!isSupabaseConfigured) return;
+      try {
+        const { data, error } = await supabase
+          .from("club_events")
+          .select("*")
+          .order("date", { ascending: true });
+
+        if (error || !data || data.length === 0) {
+          // Beautiful default list fallback if table doesn't have rows
+          setEvents([
+            {
+              id: "e-1",
+              title: "Practical CSS Flexbox & Bento Layouts",
+              date: "2026-05-29",
+              time: "2:00 PM - 4:00 PM",
+              location: "Main Computer Laboratory / Block B",
+              description: "A fun, hands-on masterclass led by Senior 5 web mentors. Bring code design ideas, learn alignment, layout design grids, and build bento boxes.",
+              type: "Workshop",
+              host: "Jerome Maku (President)"
+            },
+            {
+              id: "e-2",
+              title: "The S3 Inter-House Code Battle",
+              date: "2026-06-03",
+              time: "3:30 PM - 5:00 PM",
+              location: "Lab Annex A",
+              description: "Solve algorithmic computer logic loops and structure high-contrast CSS headers under precise count-down. Compete in Houses to win prestigious trophies and core XP points!",
+              type: "Contest",
+              host: "STAHIZZA Patron Board"
+            },
+            {
+              id: "e-3",
+              title: "Preparatory Session: UNEB Computer Studies Paper 2 Prep",
+              date: "2026-06-12",
+              time: "2:30 PM - 4:30 PM",
+              location: "Multi-media Lab",
+              description: "Detailed step-by-step review of standard past papers, spreadsheets design, databases structures, indexing syntax, with tips to gain maximum scores.",
+              type: "Meeting",
+              host: "Mr. Ronald Mwebesa"
+            }
+          ]);
+        } else {
+          setEvents(data.map((e: any) => ({
+            id: e.id,
+            title: e.title,
+            date: e.date,
+            time: e.time,
+            location: e.location,
+            description: e.description,
+            type: e.type,
+            host: e.host
+          })));
+        }
+      } catch (err) {
+        console.error("Failed to load events:", err);
+      }
+    }
+    loadEvents();
+  }, []);
 
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     const saved = localStorage.getItem("theme");
@@ -122,13 +184,7 @@ export default function App() {
     }
   }, [theme]);
 
-  const [leaderboard, setLeaderboard] = useState<any[]>(() => {
-    return isSupabaseConfigured ? [] : [
-      { name: "Kyobe Arthur", xp: 1980 },
-      { name: "Jerome Maku", xp: 1910 },
-      { name: "Nabulo Maria", xp: 1850 }
-    ];
-  });
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
 
   useEffect(() => {
     async function loadLeaderboard() {
@@ -904,7 +960,7 @@ export default function App() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {INITIAL_EVENTS.map((evt) => (
+                {events.map((evt) => (
                   <div key={evt.id} className="bg-slate-900 border border-slate-800 hover:border-slate-750 p-4 rounded-xl space-y-3 flex flex-col justify-between">
                     <div className="space-y-2">
                       <div className="flex justify-between items-center text-[10px] font-mono select-none">

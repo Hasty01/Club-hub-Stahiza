@@ -1,6 +1,5 @@
 import React, { useState, useRef } from "react";
 import { StudentProfile } from "../types";
-import { AVATAR_PRESETS } from "../data";
 import { 
   Shield, 
   Sparkles, 

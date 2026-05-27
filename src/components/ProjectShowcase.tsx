@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { ShowcaseProject, StudentProfile } from "../types";
-import { INITIAL_PROJECTS } from "../data";
 import { ExternalLink, Heart, Eye, PlusCircle, Globe, Terminal, Code, Award, Check, Loader2 } from "lucide-react";
 import { isSupabaseConfigured } from "../lib/supabaseClient";
 import { fetchProjectsFromSupabase, saveProjectToSupabase, incrementProjectLikesInSupabase } from "../lib/supabaseSync";
@@ -17,7 +16,7 @@ const PRESET_THUMBNAILS = [
 ];
 
 export default function ProjectShowcase({ userProfile, onGrantXp }: ProjectShowcaseProps) {
-  const [projects, setProjects] = useState<ShowcaseProject[]>(isSupabaseConfigured ? [] : INITIAL_PROJECTS);
+  const [projects, setProjects] = useState<ShowcaseProject[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
   const [dbLoading, setDbLoading] = useState(false);

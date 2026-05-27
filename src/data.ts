@@ -176,7 +176,7 @@ export const INITIAL_CHALLENGES: CodeChallenge[] = [
     testInstructions:
       "Return A for >=75, B for >=60, else F.",
 
-    category: "JavaScript",
+    category: "JS",
 
     xpReward: 80,
 
