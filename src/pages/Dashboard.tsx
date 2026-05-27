@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { StudentProfile } from "../types";
 import { 
   Trophy, 
@@ -61,6 +61,9 @@ export default function Dashboard({ userProfile, onNavigateToTab, onLogout, onUp
     { id: "s-5", name: "Kato Felix", classLevel: "S.3 Tech", present: true, time: "14:31" },
   ]);
 
+  // State for all student profiles in the database
+  const [studentProfiles, setStudentProfiles] = useState<any[]>([]);
+
   // State for President Console operations
   const [selectedStudentForXp, setSelectedStudentForXp] = useState("Babirye Sandra");
   const [xpValueToGrant, setXpValueToGrant] = useState(50);
@@ -77,8 +80,76 @@ export default function Dashboard({ userProfile, onNavigateToTab, onLogout, onUp
   const [promotionSubmitted, setPromotionSubmitted] = useState(false);
   const [promotionText, setPromotionText] = useState("");
 
+  // Load live bulletins, profiles, and attendance from Supabase
+  useEffect(() => {
+    async function loadDashboardData() {
+      const { isSupabaseConfigured, supabase } = await import("../lib/supabaseClient");
+      if (!isSupabaseConfigured) return;
+
+      try {
+        // 1. Fetch Bulletins / Notices
+        const { fetchNoticesFromSupabase } = await import("../lib/supabaseSync");
+        const noticeList = await fetchNoticesFromSupabase();
+        if (noticeList && noticeList.length > 0) {
+          setBulletins(noticeList.map((n: any) => ({
+            id: n.id,
+            title: n.content,
+            time: n.timestamp || "Just now",
+            category: n.isPinned ? "Event" : "Update",
+            author: `${n.author} (${n.role || "Cabinet"})`
+          })));
+        }
+
+        // 2. Fetch Profiles for selection
+        const { data: profileList, error: profileErr } = await supabase
+          .from("profiles")
+          .select("*")
+          .order("full_name", { ascending: true });
+
+        if (!profileErr && profileList && profileList.length > 0) {
+          setStudentProfiles(profileList);
+          
+          const defaultSelect = profileList.find((p: any) => p.full_name !== userProfile.name);
+          if (defaultSelect) {
+            setSelectedStudentForXp(defaultSelect.full_name);
+          } else {
+            setSelectedStudentForXp(profileList[0].full_name);
+          }
+
+          // 3. Match with today's attendance log registers
+          const todayStr = new Date().toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
+          const { data: attendanceData } = await supabase
+            .from("attendance_logs")
+            .select("*")
+            .eq("date", todayStr);
+
+          const markedLoggedMap = new Map();
+          if (attendanceData) {
+            attendanceData.forEach((log: any) => {
+              markedLoggedMap.set(log.student_name, log);
+            });
+          }
+
+          setAttendanceList(profileList.map((p: any, idx: number) => {
+            const hasLog = markedLoggedMap.get(p.full_name);
+            return {
+              id: p.id || `s-${idx}`,
+              name: p.full_name,
+              classLevel: p.class_level || "Member",
+              present: !!hasLog,
+              time: hasLog ? "14:20" : "--:--"
+            };
+          }));
+        }
+      } catch (err) {
+        console.error("Dashboard failed to sync database components:", err);
+      }
+    }
+    loadDashboardData();
+  }, [userProfile.name]);
+
   // Handler for adding dynamic bulletin
-  const handleAddBulletin = (e: React.FormEvent) => {
+  const handleAddBulletin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newBulletinTitle.trim()) return;
 
@@ -94,39 +165,116 @@ export default function Dashboard({ userProfile, onNavigateToTab, onLogout, onUp
     setNewBulletinTitle("");
     addTerminalLog(`BROADCAST: New bulletin published successfully ("${newB.title}")`);
     showTemporaryFeedback("Bulletin announcement broadcasted live!");
+
+    // Save to Supabase club_feed table
+    const { isSupabaseConfigured } = await import("../lib/supabaseClient");
+    if (isSupabaseConfigured) {
+      try {
+        const { saveNoticeToSupabase } = await import("../lib/supabaseSync");
+        await saveNoticeToSupabase({
+          id: newB.id,
+          author: userProfile.name,
+          role: userProfile.role === "president" ? "President" : "Cabinet Member",
+          content: newBulletinTitle,
+          likes: 0,
+          timestamp: "Just now",
+          isPinned: newBulletinCat === "Event"
+        });
+      } catch (err) {
+        console.error("Error saving notice to database:", err);
+      }
+    }
   };
 
   // Handler to toggle laboratory attendance
-  const handleToggleAttendance = (id: string) => {
+  const handleToggleAttendance = async (id: string) => {
+    const student = attendanceList.find(s => s.id === id);
+    if (!student) return;
+
+    const isPresentNow = !student.present;
     const timeNow = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    setAttendanceList(prev => prev.map(student => {
-      if (student.id === id) {
-        const isPresent = !student.present;
+    const todayStr = new Date().toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
+
+    setAttendanceList(prev => prev.map(s => {
+      if (s.id === id) {
         return {
-          ...student,
-          present: isPresent,
-          time: isPresent ? timeNow : "--:--"
+          ...s,
+          present: isPresentNow,
+          time: isPresentNow ? timeNow : "--:--"
         };
       }
-      return student;
+      return s;
     }));
-    addTerminalLog(`LEDGER_MOD: Toggled attendance registers for student ID: ${id}`);
+
+    addTerminalLog(`LEDGER_MOD: Toggled attendance registers for student: ${student.name}`);
     showTemporaryFeedback("Attendance logs modified!");
+
+    // Save logs directly to attendance_logs table in Supabase
+    const { isSupabaseConfigured, supabase } = await import("../lib/supabaseClient");
+    if (isSupabaseConfigured) {
+      try {
+        if (isPresentNow) {
+          const { recordAttendanceInSupabase } = await import("../lib/supabaseSync");
+          await recordAttendanceInSupabase({
+            student_name: student.name,
+            date: todayStr,
+            topic: "Active laboratories logic proximity check-in",
+            mentor: userProfile.name,
+            status: "Present"
+          });
+        } else {
+          // Remove today's present record to toggle back to absent
+          await supabase
+            .from("attendance_logs")
+            .delete()
+            .eq("student_name", student.name)
+            .eq("date", todayStr);
+        }
+      } catch (err) {
+        console.error("Error updating attendance record on Supabase:", err);
+      }
+    }
   };
 
   // Handler to grant interactive XP (President overall control)
-  const handleGrantXpSubmit = (e: React.FormEvent) => {
+  const handleGrantXpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Actually grant to the logged-in President as demonstration!
-    if (onUpdateProfile) {
-      onUpdateProfile({
-        xp: userProfile.xp + xpValueToGrant
-      });
+    const targetStudent = studentProfiles.find(p => p.full_name === selectedStudentForXp);
+
+    if (selectedStudentForXp === userProfile.name || (targetStudent && targetStudent.email === userProfile.email)) {
+      if (onUpdateProfile) {
+        onUpdateProfile({
+          xp: userProfile.xp + xpValueToGrant
+        });
+      }
+    } else if (targetStudent) {
+      const currentXp = targetStudent.xp || 0;
+      const newXp = currentXp + xpValueToGrant;
+      const newLevel = Math.floor(newXp / 300) + 1;
+
+      const { isSupabaseConfigured, supabase } = await import("../lib/supabaseClient");
+      if (isSupabaseConfigured) {
+        try {
+          await supabase
+            .from("profiles")
+            .update({ xp: newXp, level: newLevel })
+            .eq("id", targetStudent.id);
+
+          setStudentProfiles(prev => prev.map(p => {
+            if (p.id === targetStudent.id) {
+              return { ...p, xp: newXp, level: newLevel };
+            }
+            return p;
+          }));
+        } catch (err) {
+          console.error("Error giving student XP in database:", err);
+        }
+      }
     }
 
     addTerminalLog(`GRANT_XP: Broadcasted +${xpValueToGrant} XP to ${selectedStudentForXp}. Reason: ${xpReason}`);
-    showTemporaryFeedback(`Successfully gifted ${xpValueToGrant} XP to student!`);
+    showTemporaryFeedback(`Successfully gifted ${xpValueToGrant} XP to ${selectedStudentForXp}!`);
   };
 
   // System Cache Refresh simulator
@@ -406,11 +554,21 @@ export default function Dashboard({ userProfile, onNavigateToTab, onLogout, onUp
                         onChange={(e) => setSelectedStudentForXp(e.target.value)}
                         className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-100 outline-none cursor-pointer focus:border-amber-500/50"
                       >
-                        <option value="Babirye Sandra">Babirye Sandra (S.4 member)</option>
-                        <option value="Mukasa Ivan">Mukasa Ivan (S.5 member)</option>
-                        <option value="Nsubuga Derrick">Nsubuga Derrick (Cabinet)</option>
-                        <option value="Ssenyonjo Trevor">Ssenyonjo Trevor (S.2 Cadet)</option>
-                        <option value="Atamba Joel (Self)">Atamba Joel (President - self)</option>
+                        {studentProfiles.length > 0 ? (
+                          studentProfiles.map((p) => (
+                            <option key={p.id || p.full_name} value={p.full_name}>
+                              {p.full_name} ({p.class_level || "Member"})
+                            </option>
+                          ))
+                        ) : (
+                          <>
+                            <option value="Babirye Sandra">Babirye Sandra (S.4 member)</option>
+                            <option value="Mukasa Ivan">Mukasa Ivan (S.5 member)</option>
+                            <option value="Nsubuga Derrick">Nsubuga Derrick (Cabinet)</option>
+                            <option value="Ssenyonjo Trevor">Ssenyonjo Trevor (S.2 Cadet)</option>
+                            <option value="Atamba Joel">Atamba Joel (President - self)</option>
+                          </>
+                        )}
                       </select>
                     </div>
 

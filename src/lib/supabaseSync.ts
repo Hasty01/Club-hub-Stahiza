@@ -168,7 +168,7 @@ export async function fetchNoticesFromSupabase(): Promise<Notice[] | null> {
     const { data, error } = await supabase
       .from("club_feed")
       .select("*")
-      .order("is_pinned", { ascending: false });
+      .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Supabase Notices Fetch Error:", error);

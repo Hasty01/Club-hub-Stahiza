@@ -151,7 +151,7 @@ export default function CommunityHub({ userProfile, onGrantXp }: CommunityHubPro
     <div className="space-y-6 animate-fadeIn">
       {/* Tops Metrics Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl relative overflow-hidden">
+         <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl relative overflow-hidden">
           <div className="absolute top-2 right-2 p-1.5 bg-indigo-500/10 text-indigo-400 rounded-lg">
             <Users2 className="w-4 h-4" />
           </div>
@@ -160,7 +160,7 @@ export default function CommunityHub({ userProfile, onGrantXp }: CommunityHubPro
             {loading ? <span className="opacity-40">...</span> : memberCount}
           </p>
           <span className="text-[9px] text-emerald-400 flex items-center gap-0.5 mt-1 font-mono">
-            +{termRegistrationCount} registered recently
+            +{termRegistrationCount} registered this term
           </span>
         </div>
 
@@ -172,8 +172,8 @@ export default function CommunityHub({ userProfile, onGrantXp }: CommunityHubPro
           <p className="text-xl sm:text-2xl font-bold text-slate-100 mt-1">
             {loading ? <span className="opacity-40">...</span> : `${activeTeamsCount} Teams`}
           </p>
-          <span className="text-[9px] text-slate-400 block mt-1 font-mono">
-            {projectCount} Project Showcases
+          <span className="text-[9px] text-slate-400 block mt-1 font-mono truncate" title={projectCount > 0 ? `${projectCount} Project Showcases` : "National Expo Prep"}>
+            {projectCount > 0 ? `${projectCount} Project Showcases` : "National Expo Prep"}
           </span>
         </div>
 
@@ -183,10 +183,10 @@ export default function CommunityHub({ userProfile, onGrantXp }: CommunityHubPro
           </div>
           <span className="text-[10px] uppercase font-mono text-slate-500">Member Spotlight</span>
           <p className="text-xl sm:text-2xl font-bold text-indigo-400 mt-1 truncate" title={spotlightUser.name}>
-            {loading ? <span className="opacity-40">...</span> : spotlightUser.name.split(" ")[0]}
+            {loading ? "Live • Weekly" : spotlightUser.name.split(" ")[0]}
           </p>
-          <span className="text-[9px] text-slate-400 block mt-1 font-mono">
-            {loading ? "Highlighted achievements" : `${spotlightUser.xp} XP • ${spotlightUser.role.split("/")[0].trim()}`}
+          <span className="text-[9px] text-slate-400 block mt-1 font-mono truncate">
+            {loading ? "Highlighted achievements" : `${spotlightUser.xp} XP • Spotlight`}
           </span>
         </div>
 
@@ -199,7 +199,7 @@ export default function CommunityHub({ userProfile, onGrantXp }: CommunityHubPro
             {loading ? <span className="opacity-40">...</span> : `${activeMentorsCount} Fellows`}
           </p>
           <span className="text-[9px] text-slate-400 block mt-1 font-mono">
-            Supporting labs & peer code
+            Supporting standard labs
           </span>
         </div>
       </div>
