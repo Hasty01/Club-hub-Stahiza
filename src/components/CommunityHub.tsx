@@ -89,7 +89,7 @@ export default function CommunityHub({ userProfile, onGrantXp }: CommunityHubPro
           if (topUser) {
             setSpotlightUser({
               name: topUser.full_name,
-              role: topUser.class_level || "Elite Contributor",
+              role: topUser.class_level || "Standard Contributor",
               bio: topUser.bio || "Recreated the STAHIZZA ICT Club Hub with premium dark appearance and interactive modules. Enthusiastic about databases, API designs, and React.",
               xp: topUser.xp,
               contributions: Math.max(5, Math.round(topUser.xp / 90)),
@@ -210,7 +210,7 @@ export default function CommunityHub({ userProfile, onGrantXp }: CommunityHubPro
           <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
             <div>
               <h3 className="text-sm font-bold font-sans text-slate-200">RECOGNITION BOARD</h3>
-              <p className="text-[11px] text-slate-500 font-mono">Standard High High School Zzana elite contributors ranking</p>
+              <p className="text-[11px] text-slate-500 font-mono">Standard High School Zzana standard contributors ranking</p>
             </div>
             <button
               onClick={() => {

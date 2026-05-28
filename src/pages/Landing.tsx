@@ -222,7 +222,7 @@ export default function Landing({ onEnterHub, onNavigateToLogin, onNavigateToReg
                     Gamified Ranks & Leaderboard
                   </h3>
                   <p className="text-xs text-slate-400 font-light leading-relaxed">
-                    Climb the school leaderboard from student Cadet limits up to elite Senior Fellow. Win prestigious titles, digital badges, and high-bound ranking scores by passing assessment trivia.
+                    Climb the school leaderboard from student Cadet limits up to standard Senior Fellow. Win prestigious titles, digital badges, and high-bound ranking scores by passing assessment trivia.
                   </p>
                 </div>
                 <span className="text-[9px] font-mono text-emerald-400">Competitive high-school rank scorecard 👑</span>

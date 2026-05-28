@@ -1032,7 +1032,7 @@ export default function Dashboard({ userProfile, onNavigateToTab, onLogout, onUp
               >
                 <span className="flex items-center gap-2">
                   <Users2 id="icon-users" className="w-4 h-4 text-indigo-400" />
-                  Elite Contributors Hub
+                  Standard Contributors Hub
                 </span>
                 <ChevronRight id="chevron-community" className="w-4 h-4 text-slate-500 group-hover:text-pink-400 transition-colors" />
               </button>

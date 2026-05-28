@@ -398,7 +398,7 @@ export async function fetchAttendanceFromSupabase(studentName: string): Promise<
       .from("attendance_logs")
       .select("*")
       .eq("student_name", studentName)
-      .order("date", { ascending: false });
+      .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Supabase Attendance Fetch Error:", error);
@@ -580,7 +580,7 @@ export async function fetchLeaderboardFromSupabase(): Promise<any[] | null> {
       .from("leaderboard")
       .select("*");
 
-    if (error) {
+    if (error || !data || data.length === 0) {
       // Fallback to fetching top profiles if leaderboard table/view is not fully materialized or fails:
       const { data: profiles, error: pError } = await supabase
         .from("profiles")

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ClipboardCheck, Sparkles, TrendingUp, ShieldAlert, CheckCircle2, QrCode, Loader2 } from "lucide-react";
 import { StudentProfile } from "../types";
-import { isSupabaseConfigured } from "../lib/supabaseClient";
+import { isSupabaseConfigured, supabase } from "../lib/supabaseClient";
 import { fetchAttendanceFromSupabase, recordAttendanceInSupabase } from "../lib/supabaseSync";
 
 interface AttendanceLog {
@@ -35,12 +35,26 @@ export default function AttendanceView({ userProfile, onGrantXp }: AttendanceVie
       const data = await fetchAttendanceFromSupabase(userProfile.name);
       if (data && data.length > 0) {
         setAttendanceHistory(data);
-        const todayStr = new Date().toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
-        const alreadyCheckedIn = data.some(log => log.date === todayStr);
-        if (alreadyCheckedIn) {
+      }
+
+      try {
+        // Query attendance_logs using the created_at timestamp column for today
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+
+        const { data: todayLogs, error: todayErr } = await supabase
+          .from("attendance_logs")
+          .select("id")
+          .eq("student_name", userProfile.name)
+          .gte("created_at", startOfToday.toISOString());
+
+        if (!todayErr && todayLogs && todayLogs.length > 0) {
           setHasCheckedIn(true);
         }
+      } catch (e) {
+        console.warn("Failed checking today's attendance logs by timestamp:", e);
       }
+
       setDbLoading(false);
     }
     loadAttendance();

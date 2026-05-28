@@ -356,7 +356,7 @@ export default function Register({ onNavigateToLogin, onRegisterSuccess, onBackT
               >
                 <ShieldAlert className="w-5 h-5" />
                 <span className="text-[10px] font-bold tracking-tight font-sans">Cabinet Member</span>
-                <span className="text-[8px] font-mono text-slate-500 uppercase">Admin / Elite</span>
+                <span className="text-[8px] font-mono text-slate-500 uppercase">Admin / Standard</span>
               </button>
             </div>
 

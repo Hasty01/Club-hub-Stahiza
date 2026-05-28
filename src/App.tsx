@@ -50,6 +50,7 @@ import RoadmapView from "./components/RoadmapView";
 import GamesLounge from "./components/GamesLounge";
 import AttendanceView from "./components/AttendanceView";
 import ResourcesView from "./components/ResourcesView";
+import ChallengesPage from "./components/ChallengesPage";
 
 // Import new modular routing pages
 import Landing from "./pages/Landing";
@@ -82,6 +83,7 @@ export default function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [showAiAlert, setShowAiAlert] = useState<boolean>(true);
+  const [challengesSubTab, setChallengesSubTab] = useState<"lounge" | "quizzes">("lounge");
 
   const [userProfile, setUserProfile] = useState<StudentProfile>(() => {
     const stored = localStorage.getItem("stahiza_ict_profile");
@@ -188,15 +190,66 @@ export default function App() {
 
   useEffect(() => {
     async function loadLeaderboard() {
-      if (!isSupabaseConfigured) return;
-      const { fetchLeaderboardFromSupabase } = await import("./lib/supabaseSync");
-      const list = await fetchLeaderboardFromSupabase();
-      if (list && list.length > 0) {
-        setLeaderboard(list.slice(0, 5));
+      if (isSupabaseConfigured) {
+        try {
+          const { fetchLeaderboardFromSupabase } = await import("./lib/supabaseSync");
+          const list = await fetchLeaderboardFromSupabase();
+          if (list && list.length > 0) {
+            const userExists = list.some((u: any) => (u.name || "").toLowerCase() === (userProfile.name || "").toLowerCase());
+            let mergedList = [...list];
+            if (!userExists && userProfile.name) {
+              mergedList.push({
+                name: userProfile.name,
+                xp: userProfile.xp,
+                class_level: userProfile.classLevel || "Senior 5",
+                role: userProfile.rank || "Cadet"
+              });
+            }
+            // Ensure values conform
+            const mapped = mergedList.map(u => ({
+              name: u.name || "Scholar",
+              xp: typeof u.xp === "number" ? u.xp : parseInt(u.xp) || 0,
+              class_level: u.class_level || "Standard Scholar",
+              role: u.role || "Member"
+            }));
+            mapped.sort((a, b) => b.xp - a.xp);
+            setLeaderboard(mapped.slice(0, 5));
+            return;
+          }
+        } catch (err) {
+          console.error("Failed to load leaderboard from live Supabase:", err);
+        }
       }
+      
+      // Fallback for offline/local mode or if database is empty
+      const defaultCompetitors = [
+        { name: "Atamba Joel", xp: 2840, class_level: "Senior 6", role: "Mentor" },
+        { name: "Jerome K. Maku", xp: 2450, class_level: "Senior 5", role: "President" },
+        { name: "Kyobe Arthur", xp: 1980, class_level: "Senior 6", role: "VP" },
+        { name: "Nabulo Maria", xp: 1850, class_level: "Senior 3", role: "Designer" },
+        { name: "Hakim Kavuma", xp: 1210, class_level: "Senior 6", role: "Member" },
+        { name: "Namazzi Sandra", xp: 950, class_level: "Senior 2", role: "Member" }
+      ];
+      
+      let merged = [...defaultCompetitors];
+      if (userProfile.name) {
+        const index = merged.findIndex(u => u.name.toLowerCase() === userProfile.name.toLowerCase());
+        if (index !== -1) {
+          merged[index].xp = Math.max(merged[index].xp, userProfile.xp);
+        } else {
+          merged.push({
+            name: userProfile.name,
+            xp: userProfile.xp,
+            class_level: userProfile.classLevel || "Senior 5",
+            role: userProfile.rank || "Cadet"
+          });
+        }
+      }
+      merged.sort((a, b) => b.xp - a.xp);
+      setLeaderboard(merged.slice(0, 5));
     }
     loadLeaderboard();
-  }, [userProfile.xp]);
+  }, [userProfile.xp, userProfile.name]);
 
   // Fetch initial profile from Supabase when user changes
   useEffect(() => {
@@ -881,60 +934,122 @@ export default function App() {
           {activeTab === "challenges" && (
             <div className="space-y-6 animate-fadeIn">
               
-              {/* HALL OF FAME PODIUM WIDGET (as shown in Screenshot 4) */}
-              <div className="bg-slate-900 border border-slate-850 rounded-2xl p-6 flex flex-col items-center justify-center space-y-6 relative overflow-hidden">
-                <div className="absolute top-0 right-1/4 w-32 h-32 bg-pink-500/5 blur-[40px] pointer-events-none" />
-                
-                <div className="text-center space-y-1">
-                  <span className="px-2.5 py-0.5 rounded text-[8px] font-mono tracking-widest bg-pink-500/10 text-pink-400 font-bold uppercase border border-pink-500/20">
-                    HALL OF FAME
-                  </span>
-                  <h3 className="font-sans font-extrabold text-[#D946EF] uppercase text-sm tracking-wide mt-1.5">STAHIZZA ICT PODIUM</h3>
-                  <p className="text-[11px] text-slate-410 font-mono max-w-sm">Elite high-school O/A level computer revisions leaderboard</p>
+              {/* Header section with sub-tab switcher */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-900 pb-4">
+                <div>
+                  <h2 className="text-base sm:text-lg font-sans font-extrabold text-slate-100 uppercase tracking-tight flex items-center gap-2">
+                    <Trophy className="w-5 h-5 text-pink-500" />
+                    STAHIZZA Revision & Challenges
+                  </h2>
+                  <p className="text-[11px] text-slate-400 font-mono">Complete O/A-Level computer syllabus revisions and compete in live challenges</p>
                 </div>
-
-                {/* Vertical Podium presentation */}
-                <div className="flex items-end justify-center gap-4 sm:gap-6 pt-6 w-full max-w-md select-none">
-                  
-                  {/* 2nd Place: Jerome */}
-                  <div className="flex flex-col items-center space-y-2">
-                    <span className="text-2xl">👨🏾‍💻</span>
-                    <span className="text-[10px] font-bold text-slate-205">Jerome Maku</span>
-                    <div className="w-16 bg-slate-800 border-t border-slate-700 h-16 rounded-t-xl flex flex-col items-center justify-center relative shadow-inner">
-                      <span className="text-lg font-bold text-slate-400">2nd</span>
-                      <span className="text-[9px] text-slate-500 font-mono">Senior 5</span>
-                    </div>
-                  </div>
-
-                  {/* 1st Place: Arthur (Highest Column) */}
-                  <div className="flex flex-col items-center space-y-2">
-                    <span className="text-2xl animate-bounce">👑</span>
-                    <span className="text-[10px] font-bold text-pink-400">Kyobe Arthur</span>
-                    <div className="w-20 bg-gradient-to-t from-pink-600/20 via-slate-850 to-slate-800 border-t border-pink-500 h-24 rounded-t-xl flex flex-col items-center justify-center relative shadow-lg">
-                      <span className="text-xl font-bold text-pink-405">1st</span>
-                      <span className="text-[9px] text-pink-300 font-mono">Senior 6</span>
-                    </div>
-                  </div>
-
-                  {/* 3rd Place: Nabulo */}
-                  <div className="flex flex-col items-center space-y-2">
-                    <span className="text-2xl">👩🏾‍💻</span>
-                    <span className="text-[10px] font-bold text-slate-205">Nabulo Maria</span>
-                    <div className="w-16 bg-slate-800 border-t border-slate-700 h-12 rounded-t-xl flex flex-col items-center justify-center relative shadow-inner">
-                      <span className="text-lg font-bold text-amber-600">3rd</span>
-                      <span className="text-[9px] text-slate-500 font-mono">Senior 3</span>
-                    </div>
-                  </div>
-
+                
+                <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-900 select-none self-start sm:self-auto font-sans text-xs">
+                  <button
+                    onClick={() => setChallengesSubTab("lounge")}
+                    className={`px-3.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                      challengesSubTab === "lounge"
+                        ? "bg-pink-500 text-white shadow-md shadow-pink-950/15"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    🏆 Active Challenges
+                  </button>
+                  <button
+                    onClick={() => setChallengesSubTab("quizzes")}
+                    className={`px-3.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                      challengesSubTab === "quizzes"
+                        ? "bg-pink-500 text-white shadow-md shadow-pink-950/15"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    🧠 Practice Quizzes
+                  </button>
                 </div>
               </div>
 
-              {/* Revision Quests List */}
-              <QuestsTrivia
-                userProfile={userProfile}
-                onGrantXp={handleGrantXp}
-                onUnlockBadge={handleUnlockBadge}
-              />
+              {challengesSubTab === "lounge" ? (
+                <ChallengesPage
+                  userProfile={userProfile}
+                  onGrantXp={handleGrantXp}
+                  onUnlockBadge={handleUnlockBadge}
+                />
+              ) : (
+                <div className="space-y-6 animate-fadeIn">
+                  {/* HALL OF FAME PODIUM WIDGET (as shown in Screenshot 4) */}
+                  <div className="bg-slate-900 border border-slate-850 rounded-2xl p-6 flex flex-col items-center justify-center space-y-6 relative overflow-hidden">
+                    <div className="absolute top-0 right-1/4 w-32 h-32 bg-pink-500/5 blur-[40px] pointer-events-none" />
+                    
+                    <div className="text-center space-y-1">
+                      <span className="px-2.5 py-0.5 rounded text-[8px] font-mono tracking-widest bg-pink-500/10 text-pink-400 font-bold uppercase border border-pink-500/20">
+                        HALL OF FAME
+                      </span>
+                      <h3 className="font-sans font-extrabold text-[#D946EF] uppercase text-sm tracking-wide mt-1.5">STAHIZZA ICT PODIUM</h3>
+                      <p className="text-[11px] text-slate-400 font-mono max-w-sm">Standard high-school O/A level computer revisions leaderboard</p>
+                    </div>
+
+                    {/* Vertical Podium presentation */}
+                    {(() => {
+                      const firstPlace = leaderboard[0] || { name: "Awaiting Quizzer", xp: 0, class_level: "Standard Scholar" };
+                      const secondPlace = leaderboard[1] || { name: "Open Slot", xp: 0, class_level: "Standard Scholar" };
+                      const thirdPlace = leaderboard[2] || { name: "Open Slot", xp: 0, class_level: "Standard Scholar" };
+
+                      return (
+                        <div className="flex items-end justify-center gap-4 sm:gap-6 pt-6 w-full max-w-md select-none">
+                          {/* 2nd Place */}
+                          <div className="flex flex-col items-center space-y-2">
+                            <span className="text-2xl">👨🏾‍💻</span>
+                            <span className="text-[10px] font-bold text-slate-200 text-center truncate max-w-[100px]" title={secondPlace.name}>
+                              {secondPlace.name}
+                            </span>
+                            <div className="w-16 bg-slate-800 border-t border-slate-700 h-16 rounded-t-xl flex flex-col items-center justify-center relative shadow-inner">
+                              <span className="text-lg font-bold text-slate-400">2nd</span>
+                              <span className="text-[9px] text-slate-500 font-mono">
+                                {secondPlace.xp ? `${secondPlace.xp} XP` : secondPlace.class_level}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* 1st Place */}
+                          <div className="flex flex-col items-center space-y-2">
+                            <span className="text-2xl animate-bounce">👑</span>
+                            <span className="text-[10px] font-bold text-pink-400 text-center truncate max-w-[120px]" title={firstPlace.name}>
+                              {firstPlace.name}
+                            </span>
+                            <div className="w-20 bg-gradient-to-t from-pink-600/20 via-slate-850 to-slate-800 border-t border-pink-500 h-24 rounded-t-xl flex flex-col items-center justify-center relative shadow-lg">
+                              <span className="text-xl font-bold text-pink-400">1st</span>
+                              <span className="text-[9px] text-pink-300 font-mono">
+                                {firstPlace.xp ? `${firstPlace.xp} XP` : firstPlace.class_level}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* 3rd Place */}
+                          <div className="flex flex-col items-center space-y-2">
+                            <span className="text-2xl">👩🏾‍💻</span>
+                            <span className="text-[10px] font-bold text-slate-200 text-center truncate max-w-[100px]" title={thirdPlace.name}>
+                              {thirdPlace.name}
+                            </span>
+                            <div className="w-16 bg-slate-800 border-t border-slate-700 h-12 rounded-t-xl flex flex-col items-center justify-center relative shadow-inner">
+                              <span className="text-lg font-bold text-amber-600">3rd</span>
+                              <span className="text-[9px] text-slate-500 font-mono">
+                                {thirdPlace.xp ? `${thirdPlace.xp} XP` : thirdPlace.class_level}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Revision Quests List */}
+                  <QuestsTrivia
+                    userProfile={userProfile}
+                    onGrantXp={handleGrantXp}
+                    onUnlockBadge={handleUnlockBadge}
+                  />
+                </div>
+              )}
             </div>
           )}
 

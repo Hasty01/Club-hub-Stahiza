@@ -276,3 +276,74 @@ ON CONFLICT (id) DO NOTHING;
 -- Run these if your MESSAGES table is missing columns:
 -- ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user';
 -- ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS timestamp TEXT NOT NULL DEFAULT '';
+
+
+-- ==========================================
+-- 11. CHALLENGES & LEADERBOARDS (Community Engagement)
+-- ==========================================
+
+CREATE TABLE IF NOT EXISTS public.challenges (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT,
+    points INTEGER DEFAULT 0,
+    created_by TEXT NOT NULL,
+    start_date TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    end_date TIMESTAMP WITH TIME ZONE,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+ALTER TABLE public.challenges ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "club members can view challenges"
+    ON public.challenges FOR SELECT USING (true);
+
+CREATE POLICY "Anyone can create challenges"
+    ON public.challenges FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Anyone can update challenges"
+    ON public.challenges FOR UPDATE USING (true);
+
+
+CREATE TABLE IF NOT EXISTS public.challenge_submissions (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    challenge_id UUID REFERENCES public.challenges(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL,
+    user_name TEXT,
+    content TEXT,
+    file_url TEXT,
+    status TEXT DEFAULT 'pending', -- pending | approved | rejected
+    points_earned INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+ALTER TABLE public.challenge_submissions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "users can view submissions"
+    ON public.challenge_submissions FOR SELECT USING (true);
+
+CREATE POLICY "users can submit challenges"
+    ON public.challenge_submissions FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Anyone can update challenge submissions"
+    ON public.challenge_submissions FOR UPDATE USING (true);
+
+
+CREATE TABLE IF NOT EXISTS public.user_challenge_stats (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id TEXT NOT NULL UNIQUE,
+    user_name TEXT,
+    total_points INTEGER DEFAULT 0,
+    completed_challenges INTEGER DEFAULT 0,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+ALTER TABLE public.user_challenge_stats ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "view user challenge stats"
+    ON public.user_challenge_stats FOR SELECT USING (true);
+
+CREATE POLICY "Anyone can insert-update user challenge stats"
+    ON public.user_challenge_stats FOR ALL USING (true);
+
