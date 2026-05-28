@@ -203,6 +203,211 @@ const O_A_LEVEL_QUESTIONS: Quest[] = [
     correctAnswerIndex: 1,
     explanation: "Poor ergonomics, awkward typing angles, and slouching lead to musculoskeletal stress, resulting in chronic issues like RSI or back pain.",
     xpReward: 10
+  },
+  {
+    id: "uace-q1",
+    topic: "Advanced Hardware & System Architecture (UACE)",
+    difficulty: "Hard",
+    question: "In modern server architecture, which technology allows a single physical CPU core to execute two independent threads simultaneously to optimize computing throughput?",
+    options: ["Overclocking", "Hyper-Threading (Simultaneous Multithreading)", "Dual-channel routing", "Pipelining"],
+    correctAnswerIndex: 1,
+    explanation: "Hyper-threading exposes one physical processor core as two logical virtual processors to the operating system, allowing parallel thread execution.",
+    xpReward: 15
+  },
+  {
+    id: "uace-q2",
+    topic: "Advanced Hardware & System Architecture (UACE)",
+    difficulty: "Hard",
+    question: "When evaluating solid-state drives (SSDs) for a high-performance school database server, what protocol allows data transfer directly via the high-speed PCIe bus rather than the older SATA controller interfaces?",
+    options: ["SCSI", "NVMe (Non-Volatile Memory Express)", "PATA", "IDEs"],
+    correctAnswerIndex: 1,
+    explanation: "NVMe is explicitly engineered for solid-state storage to bypass traditional drive controllers, dramatically lowering latency and expanding data bandwidth.",
+    xpReward: 15
+  },
+  {
+    id: "uace-q3",
+    topic: "Advanced Hardware & System Architecture (UACE)",
+    difficulty: "Hard",
+    question: "What is the fundamental operational difference between a computer's Motherboard Chipset Northbridge and Southbridge controllers?",
+    options: [
+      "The Northbridge handles high-speed components like the CPU and RAM, while the Southbridge manages slower I/O peripherals like USB ports and hard drives.",
+      "The Southbridge handles high-speed memory operations, whereas the Northbridge only routes power lines.",
+      "The Northbridge links directly with physical keyboards, while the Southbridge routes display frames.",
+      "There is no actual operational difference as both manage the motherboard components in parallel."
+    ],
+    correctAnswerIndex: 0,
+    explanation: "The Northbridge sits closer to the processor, facilitating rapid communications between the CPU, system memory, and the AGP/PCIe graphics slots.",
+    xpReward: 15
+  },
+  {
+    id: "uace-q4",
+    topic: "Advanced Hardware & System Architecture (UACE)",
+    difficulty: "Hard",
+    question: "Which processor management technique fetches the next instruction from system memory before the current instruction finishes executing in the CPU control pipeline?",
+    options: ["Multiprogramming", "Instruction Pipelining", "Direct Memory Access (DMA)", "Context Switching"],
+    correctAnswerIndex: 1,
+    explanation: "Pipelining splits instruction execution into sequential stages, allowing the processor to work on different parts of multiple instructions at the exact same time.",
+    xpReward: 15
+  },
+  {
+    id: "uace-q5",
+    topic: "Database Management Systems (DBMS) (UACE)",
+    difficulty: "Medium",
+    question: "When establishing relational integrity in a school management database, what is a primary key from one table called when it is inserted into a second table to link them together?",
+    options: ["Composite Key", "Alternate Key", "Foreign Key", "Candidate Key"],
+    correctAnswerIndex: 2,
+    explanation: "A foreign key creates a safe logical bridge between two tables by matching records back to a unique primary key in the parent table.",
+    xpReward: 15
+  },
+  {
+    id: "uace-q6",
+    topic: "Database Management Systems (DBMS) (UACE)",
+    difficulty: "Medium",
+    question: "Which database schema design constraint guarantees that a user cannot accidently delete a record from a parent \"Students Table\" if active matching records exist in the child \"Club Membership Table\"?",
+    options: ["Entity Integrity", "Referential Integrity", "Domain Validation Rules", "Data Compaction"],
+    correctAnswerIndex: 1,
+    explanation: "Referential integrity rules prevent orphan records by blocking any destructive deletions or alterations that would break references between linked tables.",
+    xpReward: 15
+  },
+  {
+    id: "uace-q7",
+    topic: "Database Management Systems (DBMS) (UACE)",
+    difficulty: "Hard",
+    question: "In database optimization, what design process involves organizing table structures to minimize structural redundancy and protect against data modification anomalies?",
+    options: ["Indexing", "Data Migration", "Normalization", "Query Serialization"],
+    correctAnswerIndex: 2,
+    explanation: "Normalization divides monolithic data collections into smaller, highly structured tables using strict rules (First, Second, and Third Normal Forms) to secure consistency.",
+    xpReward: 15
+  },
+  {
+    id: "uace-q8",
+    topic: "Database Management Systems (DBMS) (UACE)",
+    difficulty: "Medium",
+    question: "When designing input forms for an ICT club inventory database, what specific structural property enforces that a phone number field must strictly match the format \"(+256) 700-000000\"?",
+    options: ["Default Value", "Input Mask", "Indexed Constraint", "Smart Tag"],
+    correctAnswerIndex: 1,
+    explanation: "An input mask establishes a literal input template that restricts the structural layout of characters a user can physically type into a table cell or form field.",
+    xpReward: 15
+  },
+  {
+    id: "uace-q9",
+    topic: "Advanced Networking (UACE)",
+    difficulty: "Medium",
+    question: "Which network layer model protocols are explicitly responsible for resolving a human-readable domain URL name like schoolhub.sc.ug into a numeric IP address?",
+    options: ["DHCP (Dynamic Host Configuration Protocol)", "DNS (Domain Name System)", "FTP (File Transfer Protocol)", "SMTP (Simple Mail Transfer Protocol)"],
+    correctAnswerIndex: 1,
+    explanation: "DNS functions as the internet's public phonebook, translating alphanumeric web hostnames directly into server IP addresses for routing.",
+    xpReward: 15
+  },
+  {
+    id: "uace-q10",
+    topic: "Advanced Networking (UACE)",
+    difficulty: "Hard",
+    question: "A network administrator installs an active server node that dynamically maps private internal IP addresses within the computer lab to a single public IP address when connecting to the internet. What is this technique called?",
+    options: ["Subnetting", "MAC Filtering", "NAT (Network Address Translation)", "VLAN Tagging"],
+    correctAnswerIndex: 2,
+    explanation: "NAT conserves the limited global IPv4 address space by allowing an entire local area network (LAN) to mask behind a single public router IP address.",
+    xpReward: 15
+  },
+  {
+    id: "uace-q11",
+    topic: "Advanced Networking (UACE)",
+    difficulty: "Medium",
+    question: "Which network transmission media is entirely immune to Electromagnetic Interference (EMI) and Radio Frequency Interference (RFI)?",
+    options: ["Shielded Twisted Pair (STP)", "Fiber Optic Cable", "Coaxial Cable", "Unshielded Twisted Pair (UTP)"],
+    correctAnswerIndex: 1,
+    explanation: "Fiber optic strands carry data as light pulses through glass cores instead of raw electrical currents through copper wires, rendering them completely immune to electrical noise.",
+    xpReward: 15
+  },
+  {
+    id: "uace-q12",
+    topic: "Advanced Networking (UACE)",
+    difficulty: "Hard",
+    question: "What primary hardware device operates at the Data Link layer of the OSI model to segment local network collision domains by forwarding packets strictly to target physical MAC addresses?",
+    options: ["Network Hub", "Active Switch", "Repeater", "Power Stabilizer"],
+    correctAnswerIndex: 1,
+    explanation: "Unlike dumb hubs that broadcast data across all ports simultaneously, a network switch inspects MAC addresses to direct frames securely to their exact destination node.",
+    xpReward: 15
+  },
+  {
+    id: "uace-q13",
+    topic: "Information Security (UACE)",
+    difficulty: "Hard",
+    question: "In modern network security infrastructure, what asymmetric cryptography process uses two distinct linked keys (a Public Key and a Private Key) to secure data packets over public networks?",
+    options: ["Symmetric Advanced Encryption", "Public Key Infrastructure (PKI) / Asymmetric Encryption", "Symmetric hashing", "Rotational ciphering"],
+    correctAnswerIndex: 1,
+    explanation: "Asymmetric encryption utilizes a publicly shareable key to encrypt data, while a completely separate, secret private key is required to decrypt the ciphertext.",
+    xpReward: 15
+  },
+  {
+    id: "uace-q14",
+    topic: "Information Security (UACE)",
+    difficulty: "Hard",
+    question: "What type of malicious engineering software installs itself silently on a system to track user keystrokes, passwords, and banking sessions without their knowledge or authorization?",
+    options: ["Ransomware", "Rootkit", "Spyware (Keylogger)", "Macro Virus"],
+    correctAnswerIndex: 2,
+    explanation: "Keyloggers run in the background to capture physical keystrokes, saving or transmitting credential logs back to unauthorized third parties.",
+    xpReward: 15
+  },
+  {
+    id: "uace-q15",
+    topic: "Information Security (UACE)",
+    difficulty: "Hard",
+    question: "A student notices their computer files have been encrypted overnight, and all filenames now end with an extension like .locked. A text file on the desktop demands a cryptocurrency payment to recover them. What attack vectors are at play?",
+    options: ["Trojan Horse", "Ransomware", "Logic Bomb", "Worm replication"],
+    correctAnswerIndex: 1,
+    explanation: "Ransomware is a specialized class of cryptoviral malware designed to deny access to computer files until a ransom fee is paid.",
+    xpReward: 15
+  },
+  {
+    id: "uace-q16",
+    topic: "Information Security (UACE)",
+    difficulty: "Medium",
+    question: "What security protocol verifies that a network user is exactly who they claim to be based on an evaluation of multifactor credentials?",
+    options: ["Authorization", "Data Auditing", "Authentication", "Non-repudiation"],
+    correctAnswerIndex: 2,
+    explanation: "Authentication validates identity credentials (e.g., matching a username with a password or biometrics), while authorization determines what files that specific user has permission to view.",
+    xpReward: 15
+  },
+  {
+    id: "uace-q17",
+    topic: "Advanced Software Systems (UACE)",
+    difficulty: "Easy",
+    question: "When a school transitions its administrative tools to a cloud layout where they access software via web browsers without managing any server hardware or code compilation, which service model are they utilizing?",
+    options: ["IaaS (Infrastructure as a Service)", "PaaS (Platform as a Service)", "SaaS (Software as a Service)", "DaaS (Data as a Service)"],
+    correctAnswerIndex: 2,
+    explanation: "SaaS delivers fully managed end-user application suites over the internet (e.g., Google Workspace or Microsoft 35) directly to browsers.",
+    xpReward: 15
+  },
+  {
+    id: "uace-q18",
+    topic: "Advanced Software Systems (UACE)",
+    difficulty: "Hard",
+    question: "What specific condition occurs in an operating system when two or more active processes are stuck indefinitely, each waiting for system resources held by the other?",
+    options: ["Thrashing", "Deadlock", "Buffer Overflow", "Segment Faulting"],
+    correctAnswerIndex: 1,
+    explanation: "A deadlock happens when processes become mutually stuck because resource dependencies lock up, halting execution until the OS intercedes.",
+    xpReward: 15
+  },
+  {
+    id: "uace-q19",
+    topic: "Advanced Software Systems (UACE)",
+    difficulty: "Medium",
+    question: "In spreadsheet engines (like MS Excel), what specific structural error code is returned if a formula references a cell block containing textual descriptors instead of pure numerical numbers?",
+    options: ["#DIV/0!", "#VALUE!", "#NAME?", "#REF!"],
+    correctAnswerIndex: 1,
+    explanation: "The #VALUE! error signals that a function received a parameter of the wrong data type, such as attempting a mathematical addition on an alphanumeric text string.",
+    xpReward: 15
+  },
+  {
+    id: "uace-q20",
+    topic: "Advanced Software Systems (UACE)",
+    difficulty: "Medium",
+    question: "What system utility software technique allocates a temporary storage block in system memory to hold data being moved between an incredibly fast device (like a CPU) and a much slower peripheral (like a mechanical printer)?",
+    options: ["Virtual Memory paging", "Buffering/Spooling", "Formatting optimization", "Data Compression"],
+    correctAnswerIndex: 1,
+    explanation: "Buffering and spooling capture output data streams and feed them out gradually at a speed the slower output device can handle, freeing the CPU to resume main tasks.",
+    xpReward: 15
   }
 ];
 
@@ -232,20 +437,62 @@ export default function QuestsTrivia({ userProfile, onGrantXp, onUnlockBadge }: 
             .order("id", { ascending: true });
 
           if (!error && data && data.length > 0) {
-            setQuests(
-              data.map((q: any) => ({
-                id: q.id,
-                topic: q.topic,
-                difficulty: q.difficulty || "Medium",
-                question: q.question,
-                options: q.options || [],
-                correctAnswerIndex: q.correct_answer_index,
-                explanation: q.explanation || "No explanation provided.",
-                xpReward: q.xp_reward || 10,
-              }))
-            );
+            // Map the retrieved database quests
+            const existingQuests = data.map((q: any) => ({
+              id: q.id,
+              topic: q.topic,
+              difficulty: q.difficulty || "Medium",
+              question: q.question,
+              options: q.options || [],
+              correctAnswerIndex: q.correct_answer_index,
+              explanation: q.explanation || "No explanation provided.",
+              xpReward: q.xp_reward || 10,
+            }));
+
+            // Check if there are any missing quests from our local bundle O_A_LEVEL_QUESTIONS
+            const existingIds = new Set(existingQuests.map((q: any) => q.id));
+            const missingQuests = O_A_LEVEL_QUESTIONS.filter(q => !existingIds.has(q.id));
+
+            if (missingQuests.length > 0) {
+              // Background seeding for missing quests
+              for (const q of missingQuests) {
+                await supabase.from("quests").insert([{
+                  id: q.id,
+                  topic: q.topic,
+                  difficulty: q.difficulty,
+                  question: q.question,
+                  options: q.options,
+                  correct_answer_index: q.correctAnswerIndex,
+                  explanation: q.explanation,
+                  xp_reward: q.xpReward
+                }]);
+              }
+              // Pull again to stay updated
+              const { data: reData } = await supabase
+                .from("quests")
+                .select("*")
+                .order("id", { ascending: true });
+              if (reData && reData.length > 0) {
+                setQuests(
+                  reData.map((q: any) => ({
+                    id: q.id,
+                    topic: q.topic,
+                    difficulty: q.difficulty || "Medium",
+                    question: q.question,
+                    options: q.options || [],
+                    correctAnswerIndex: q.correct_answer_index,
+                    explanation: q.explanation || "No explanation provided.",
+                    xpReward: q.xp_reward || 10,
+                  }))
+                );
+              } else {
+                setQuests(O_A_LEVEL_QUESTIONS);
+              }
+            } else {
+              setQuests(existingQuests);
+            }
           } else {
-            // Seed the Supabase database with these 20 practice questions if it's currently empty
+            // Seed the Supabase database with these practice questions if it's currently empty
             for (const q of O_A_LEVEL_QUESTIONS) {
               await supabase.from("quests").insert([{
                 id: q.id,
@@ -285,7 +532,16 @@ export default function QuestsTrivia({ userProfile, onGrantXp, onUnlockBadge }: 
           // Local storage state mode fallback if Supabase not configured
           const cached = localStorage.getItem("stahizza_local_quests");
           if (cached) {
-            setQuests(JSON.parse(cached));
+            const parsed = JSON.parse(cached);
+            const cachedIds = new Set(parsed.map((q: any) => q.id));
+            const missingQuests = O_A_LEVEL_QUESTIONS.filter(q => !cachedIds.has(q.id));
+            if (missingQuests.length > 0) {
+              const merged = [...parsed, ...missingQuests];
+              setQuests(merged);
+              localStorage.setItem("stahizza_local_quests", JSON.stringify(merged));
+            } else {
+              setQuests(parsed);
+            }
           } else {
             setQuests(O_A_LEVEL_QUESTIONS);
             localStorage.setItem("stahizza_local_quests", JSON.stringify(O_A_LEVEL_QUESTIONS));
