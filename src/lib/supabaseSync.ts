@@ -594,7 +594,8 @@ export async function fetchLeaderboardFromSupabase(): Promise<any[] | null> {
         name: p.full_name,
         xp: p.xp,
         class_level: p.class_level,
-        role: p.role
+        role: p.role,
+        avatar_url: p.avatar_url || p.avatar_seed
       }));
     }
 

@@ -51,6 +51,7 @@ import GamesLounge from "./components/GamesLounge";
 import AttendanceView from "./components/AttendanceView";
 import ResourcesView from "./components/ResourcesView";
 import ChallengesPage from "./components/ChallengesPage";
+import Leaderboard from "./components/Leaderboard";
 
 // Import new modular routing pages
 import Landing from "./pages/Landing";
@@ -83,7 +84,7 @@ export default function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [showAiAlert, setShowAiAlert] = useState<boolean>(true);
-  const [challengesSubTab, setChallengesSubTab] = useState<"lounge" | "quizzes">("lounge");
+  const [challengesSubTab, setChallengesSubTab] = useState<"lounge" | "quizzes" | "leaderboard">("lounge");
 
   const [userProfile, setUserProfile] = useState<StudentProfile>(() => {
     const stored = localStorage.getItem("stahiza_ict_profile");
@@ -202,7 +203,8 @@ export default function App() {
                 name: userProfile.name,
                 xp: userProfile.xp,
                 class_level: userProfile.classLevel || "Senior 5",
-                role: userProfile.rank || "Cadet"
+                role: userProfile.rank || "Cadet",
+                avatar_url: userProfile.avatarUrl || ""
               });
             }
             // Ensure values conform
@@ -210,7 +212,8 @@ export default function App() {
               name: u.name || "Scholar",
               xp: typeof u.xp === "number" ? u.xp : parseInt(u.xp) || 0,
               class_level: u.class_level || "Standard Scholar",
-              role: u.role || "Member"
+              role: u.role || "Member",
+              avatar_url: u.avatar_url || u.avatar_seed || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(u.name || 'Scholar')}`
             }));
             mapped.sort((a, b) => b.xp - a.xp);
             setLeaderboard(mapped.slice(0, 5));
@@ -223,12 +226,12 @@ export default function App() {
       
       // Fallback for offline/local mode or if database is empty
       const defaultCompetitors = [
-        { name: "Atamba Joel", xp: 2840, class_level: "Senior 6", role: "Mentor" },
-        { name: "Jerome K. Maku", xp: 2450, class_level: "Senior 5", role: "President" },
-        { name: "Kyobe Arthur", xp: 1980, class_level: "Senior 6", role: "VP" },
-        { name: "Nabulo Maria", xp: 1850, class_level: "Senior 3", role: "Designer" },
-        { name: "Hakim Kavuma", xp: 1210, class_level: "Senior 6", role: "Member" },
-        { name: "Namazzi Sandra", xp: 950, class_level: "Senior 2", role: "Member" }
+        { name: "Atamba Joel", xp: 2840, class_level: "Senior 6", role: "Mentor", avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80" },
+        { name: "Jerome K. Maku", xp: 2450, class_level: "Senior 5", role: "President", avatar_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" },
+        { name: "Kyobe Arthur", xp: 1980, class_level: "Senior 6", role: "VP", avatar_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80" },
+        { name: "Nabulo Maria", xp: 1850, class_level: "Senior 3", role: "Designer", avatar_url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80" },
+        { name: "Hakim Kavuma", xp: 1210, class_level: "Senior 6", role: "Member", avatar_url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80" },
+        { name: "Namazzi Sandra", xp: 950, class_level: "Senior 2", role: "Member", avatar_url: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80" }
       ];
       
       let merged = [...defaultCompetitors];
@@ -236,12 +239,16 @@ export default function App() {
         const index = merged.findIndex(u => u.name.toLowerCase() === userProfile.name.toLowerCase());
         if (index !== -1) {
           merged[index].xp = Math.max(merged[index].xp, userProfile.xp);
+          if (userProfile.avatarUrl) {
+            merged[index].avatar_url = userProfile.avatarUrl;
+          }
         } else {
           merged.push({
             name: userProfile.name,
             xp: userProfile.xp,
             class_level: userProfile.classLevel || "Senior 5",
-            role: userProfile.rank || "Cadet"
+            role: userProfile.rank || "Cadet",
+            avatar_url: userProfile.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(userProfile.name)}`
           });
         }
       }
@@ -249,7 +256,7 @@ export default function App() {
       setLeaderboard(merged.slice(0, 5));
     }
     loadLeaderboard();
-  }, [userProfile.xp, userProfile.name]);
+  }, [userProfile.xp, userProfile.name, userProfile.avatarUrl]);
 
   // Fetch initial profile from Supabase when user changes
   useEffect(() => {
@@ -947,23 +954,33 @@ export default function App() {
                 <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-900 select-none self-start sm:self-auto font-sans text-xs">
                   <button
                     onClick={() => setChallengesSubTab("lounge")}
-                    className={`px-3.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
                       challengesSubTab === "lounge"
                         ? "bg-pink-500 text-white shadow-md shadow-pink-950/15"
                         : "text-slate-400 hover:text-slate-200"
                     }`}
                   >
-                    🏆 Active Challenges
+                    🏆 Challenges
                   </button>
                   <button
                     onClick={() => setChallengesSubTab("quizzes")}
-                    className={`px-3.5 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
                       challengesSubTab === "quizzes"
                         ? "bg-pink-500 text-white shadow-md shadow-pink-950/15"
                         : "text-slate-400 hover:text-slate-200"
                     }`}
                   >
-                    🧠 Practice Quizzes
+                    🧠 Quizzes
+                  </button>
+                  <button
+                    onClick={() => setChallengesSubTab("leaderboard")}
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                      challengesSubTab === "leaderboard"
+                        ? "bg-pink-500 text-white shadow-md shadow-pink-950/15"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    👑 Leaderboard
                   </button>
                 </div>
               </div>
@@ -973,6 +990,10 @@ export default function App() {
                   userProfile={userProfile}
                   onGrantXp={handleGrantXp}
                   onUnlockBadge={handleUnlockBadge}
+                />
+              ) : challengesSubTab === "leaderboard" ? (
+                <Leaderboard
+                  userProfile={userProfile}
                 />
               ) : (
                 <div className="space-y-6 animate-fadeIn">
@@ -990,15 +1011,19 @@ export default function App() {
 
                     {/* Vertical Podium presentation */}
                     {(() => {
-                      const firstPlace = leaderboard[0] || { name: "Awaiting Quizzer", xp: 0, class_level: "Standard Scholar" };
-                      const secondPlace = leaderboard[1] || { name: "Open Slot", xp: 0, class_level: "Standard Scholar" };
-                      const thirdPlace = leaderboard[2] || { name: "Open Slot", xp: 0, class_level: "Standard Scholar" };
+                      const firstPlace = leaderboard[0] || { name: "Awaiting Quizzer", xp: 0, class_level: "Standard Scholar", avatar_url: "" };
+                      const secondPlace = leaderboard[1] || { name: "Open Slot", xp: 0, class_level: "Standard Scholar", avatar_url: "" };
+                      const thirdPlace = leaderboard[2] || { name: "Open Slot", xp: 0, class_level: "Standard Scholar", avatar_url: "" };
 
                       return (
                         <div className="flex items-end justify-center gap-4 sm:gap-6 pt-6 w-full max-w-md select-none">
                           {/* 2nd Place */}
                           <div className="flex flex-col items-center space-y-2">
-                            <span className="text-2xl">👨🏾‍💻</span>
+                            {secondPlace.avatar_url ? (
+                              <img src={secondPlace.avatar_url} className="w-10 h-10 rounded-full border border-slate-700 object-cover shadow-md ring-2 ring-slate-800/50" alt="" referrerPolicy="no-referrer" />
+                            ) : (
+                              <span className="text-2xl">👨🏾‍💻</span>
+                            )}
                             <span className="text-[10px] font-bold text-slate-200 text-center truncate max-w-[100px]" title={secondPlace.name}>
                               {secondPlace.name}
                             </span>
@@ -1012,7 +1037,16 @@ export default function App() {
 
                           {/* 1st Place */}
                           <div className="flex flex-col items-center space-y-2">
-                            <span className="text-2xl animate-bounce">👑</span>
+                            <div className="relative">
+                              {firstPlace.avatar_url ? (
+                                <img src={firstPlace.avatar_url} className="w-12 h-12 rounded-full border-2 border-pink-500 object-cover shadow-lg ring-4 ring-pink-500/20" alt="" referrerPolicy="no-referrer" />
+                              ) : (
+                                <span className="text-3xl animate-bounce">👑</span>
+                              )}
+                              {firstPlace.avatar_url && (
+                                <span className="absolute -top-3.5 -right-1 text-base drop-shadow-md animate-bounce">👑</span>
+                              )}
+                            </div>
                             <span className="text-[10px] font-bold text-pink-400 text-center truncate max-w-[120px]" title={firstPlace.name}>
                               {firstPlace.name}
                             </span>
@@ -1026,7 +1060,11 @@ export default function App() {
 
                           {/* 3rd Place */}
                           <div className="flex flex-col items-center space-y-2">
-                            <span className="text-2xl">👩🏾‍💻</span>
+                            {thirdPlace.avatar_url ? (
+                              <img src={thirdPlace.avatar_url} className="w-10 h-10 rounded-full border border-slate-700 object-cover shadow-md ring-2 ring-slate-800/50" alt="" referrerPolicy="no-referrer" />
+                            ) : (
+                              <span className="text-2xl">👩🏾‍💻</span>
+                            )}
                             <span className="text-[10px] font-bold text-slate-200 text-center truncate max-w-[100px]" title={thirdPlace.name}>
                               {thirdPlace.name}
                             </span>
