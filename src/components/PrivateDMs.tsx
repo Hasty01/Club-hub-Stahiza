@@ -15,7 +15,8 @@ import {
   X,
   Compass,
   Zap,
-  BookOpen
+  BookOpen,
+  RefreshCw
 } from "lucide-react";
 
 interface Profile {
@@ -85,6 +86,8 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
   const typingTimeoutRef = useRef<any>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const isFirstScrollRef = useRef(true);
   const subscriptionRef = useRef<any>(null);
 
   const getMyUserId = () => {
@@ -103,9 +106,6 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
         setAuthUserId(data.user.id);
       }
     });
-
-    fetchProfiles();
-    fetchOnlineUsers();
 
     // Periodically update online indicators
     const presenceTimer = setInterval(fetchOnlineUsers, 10000);
@@ -131,9 +131,27 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
     };
   }, []);
 
-  // 2. Auto-scroll chat on incoming messages
+  // Sync profiles and online users as soon as user ID is resolved (or on mount/update)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    fetchProfiles();
+    fetchOnlineUsers();
+  }, [authUserId, userProfile?.id]);
+
+  // 2. Auto-scroll chat on incoming messages (only inside the scroll container, without jumping viewport)
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      if (isFirstScrollRef.current) {
+        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        if (messages.length > 0) {
+          isFirstScrollRef.current = false;
+        }
+      } else {
+        chatContainerRef.current.scrollTo({
+          top: chatContainerRef.current.scrollHeight,
+          behavior: "smooth"
+        });
+      }
+    }
   }, [messages]);
 
   // 3. Keep real-time subscription alive for standard DMs, reactions, and typing indicator status
@@ -144,6 +162,9 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
       setRecipientTyping(false);
       return;
     }
+
+    // Reset snap-to-bottom flag for the new conversation load
+    isFirstScrollRef.current = true;
 
     fetchDmMessages(activeConvId);
 
@@ -778,10 +799,15 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
           )}
 
           <div className="px-2 py-1 text-[9px] font-mono tracking-wider uppercase text-slate-500 font-bold mb-1 border-t border-slate-900 pt-2 shrink-0">
-            Certified Classmates ({filteredProfiles.length})
+            Certified Classmates ({loading ? "..." : filteredProfiles.length})
           </div>
 
-          {filteredProfiles.length === 0 ? (
+          {loading ? (
+            <div className="p-8 text-center text-slate-500">
+              <RefreshCw className="w-5 h-5 mx-auto text-pink-500 mb-2 animate-spin" />
+              <p className="text-[10px] font-mono">Syncing scholar directories...</p>
+            </div>
+          ) : filteredProfiles.length === 0 ? (
             <div className="p-8 text-center text-slate-500">
               <Compass className="w-5 h-5 mx-auto text-slate-600 mb-1 animate-pulse" />
               <p className="text-[10px] font-mono">No other club scholars matched.</p>
@@ -899,7 +925,7 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
             </div>
 
             {/* main Message logs container frame */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-slate-800">
+            <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-slate-800">
               {loadingMessages ? (
                 <div className="h-full flex flex-col items-center justify-center text-center">
                   <p className="text-[10px] font-mono text-slate-500 animate-pulse">Syncing direct message vault logs...</p>
