@@ -347,3 +347,44 @@ CREATE POLICY "view user challenge stats"
 CREATE POLICY "Anyone can insert-update user challenge stats"
     ON public.user_challenge_stats FOR ALL USING (true);
 
+
+-- 12. GALLERY IMAGES Table (STAHIZZA Club snaps and activity logs)
+CREATE TABLE IF NOT EXISTS public.gallery_images (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    category TEXT NOT NULL,
+    url TEXT NOT NULL,
+    description TEXT NOT NULL,
+    date TEXT NOT NULL,
+    location TEXT NOT NULL DEFAULT 'STAHIZZA Campus',
+    likes INTEGER NOT NULL DEFAULT 0,
+    comments JSONB NOT NULL DEFAULT '[]'::jsonb,
+    photographer TEXT NOT NULL,
+    photographer_title TEXT NOT NULL,
+    camera TEXT NOT NULL,
+    lens TEXT NOT NULL,
+    iso INTEGER NOT NULL,
+    aperture TEXT NOT NULL,
+    shutter TEXT NOT NULL,
+    liked_by TEXT[] DEFAULT '{}'::text[],
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Turn on Row Level Security for gallery_images
+ALTER TABLE public.gallery_images ENABLE ROW LEVEL SECURITY;
+
+-- Safety policies: allow global viewing, and logged-in club-led insertions
+CREATE POLICY "Gallery images are viewable by everyone" 
+    ON public.gallery_images FOR SELECT USING (true);
+
+CREATE POLICY "Anyone can insert a gallery snapshot" 
+    ON public.gallery_images FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Anyone can update gallery images likes or reviews" 
+    ON public.gallery_images FOR UPDATE USING (true);
+
+CREATE POLICY "Anyone can delete gallery snapshots" 
+    ON public.gallery_images FOR DELETE USING (true);
+
+
+

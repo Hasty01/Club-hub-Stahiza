@@ -33,7 +33,8 @@ import {
   User,
   AlertCircle,
   Sun,
-  Moon
+  Moon,
+  Image
 } from "lucide-react";
 
 // Import modular subcomponents safely
@@ -52,6 +53,7 @@ import AttendanceView from "./components/AttendanceView";
 import ResourcesView from "./components/ResourcesView";
 import ChallengesPage from "./components/ChallengesPage";
 import Leaderboard from "./components/Leaderboard";
+import Gallery from "./components/Gallery";
 
 // Import new modular routing pages
 import Landing from "./pages/Landing";
@@ -453,6 +455,7 @@ export default function App() {
     { id: "playground", label: "Playground", icon: Code, desc: "HTML/CSS sandbox compiler" },
     { id: "games", label: "Games", icon: Gamepad2, desc: "Reaction & speed runs" },
     { id: "showcase", label: "Showcase", icon: Award, desc: "Publish digital creations" },
+    { id: "gallery", label: "Gallery", icon: Image, desc: "ICT Club Moments & Activities" },
     { id: "profile", label: "Profile", icon: User, desc: "Configure student registers" }
   ];
 
@@ -1209,6 +1212,16 @@ export default function App() {
               </div>
 
               <ProjectShowcase
+                userProfile={userProfile}
+                onGrantXp={handleGrantXp}
+              />
+            </div>
+          )}
+
+          {/* VIEW 15: GALLERY MODULE */}
+          {activeTab === "gallery" && (
+            <div className="space-y-6 animate-fadeIn">
+              <Gallery
                 userProfile={userProfile}
                 onGrantXp={handleGrantXp}
               />
