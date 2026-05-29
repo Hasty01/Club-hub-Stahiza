@@ -65,21 +65,15 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
     const saved = localStorage.getItem("stahizza_dm_recipient");
     if (saved) {
       try {
-        return JSON.parse(saved);
-      } catch (e) {}
-    }
-    return clubChatProfile;
-  });
-  const [activeConvId, setActiveConvId] = useState<string | null>(() => {
-    const saved = localStorage.getItem("stahizza_dm_recipient");
-    if (saved) {
-      try {
         const parsed = JSON.parse(saved);
-        return parsed.id === "club-chat-group" ? "club-chat-group" : null;
+        if (parsed && parsed.id !== "club-chat-group") {
+          return parsed;
+        }
       } catch (e) {}
     }
-    return "club-chat-group";
+    return null;
   });
+  const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [messages, setMessages] = useState<DmMessage[]>([]);
   const [text, setText] = useState("");
   
@@ -788,42 +782,7 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
 
         {/* Scholar list Container */}
         <div className="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-thin scrollbar-thumb-slate-800">
-          {/* STAHIZZA General Club Chatroom item */}
-          {(searchQuery === "" || `${clubChatProfile.name} ${clubChatProfile.username} ${clubChatProfile.classLevel}`.toLowerCase().includes(searchQuery.toLowerCase())) && (
-            <button
-              onClick={() => handleSelectRecipient(clubChatProfile)}
-              className={`w-full text-left p-2.5 rounded-xl transition-all duration-150 flex items-center justify-between group mb-2 border ${
-                selectedRecipient?.id === "club-chat-group"
-                  ? "bg-slate-800/90 border-pink-500/20 shadow-md shadow-pink-950/10"
-                  : "hover:bg-slate-900 border-transparent"
-              }`}
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="relative shrink-0">
-                  <img
-                    src={clubChatProfile.avatarUrl}
-                    alt={clubChatProfile.name}
-                    referrerPolicy="no-referrer"
-                    className="w-8 h-8 rounded-full border border-slate-700/50 object-cover"
-                  />
-                  <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-slate-950 bg-emerald-400 animate-pulse" />
-                </div>
-                <div className="min-w-0">
-                  <h5 className="font-bold text-slate-100 truncate group-hover:text-pink-400 font-sans text-xs">
-                    {clubChatProfile.name}
-                  </h5>
-                  <span className="text-[10px] font-mono text-slate-400">
-                    {clubChatProfile.classLevel}
-                  </span>
-                </div>
-              </div>
-              <span className="shrink-0 text-[10px] text-pink-400 font-mono pr-1 font-bold animate-pulse">
-                📢 PUBLIC
-              </span>
-            </button>
-          )}
-
-          <div className="px-2 py-1 text-[9px] font-mono tracking-wider uppercase text-slate-500 font-bold mb-1 border-t border-slate-900 pt-2 shrink-0">
+          <div className="px-2 py-1 text-[9px] font-mono tracking-wider uppercase text-slate-500 font-bold mb-1 pt-2 shrink-0">
             Certified Classmates ({loading ? "..." : filteredProfiles.length})
           </div>
 
