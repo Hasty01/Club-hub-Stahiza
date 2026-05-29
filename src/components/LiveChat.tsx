@@ -4,7 +4,14 @@ import { MessageSquare, Send, Sparkles, Check, CheckCheck, Smile, Bell, MessageC
 import PrivateDMs from "./PrivateDMs";
 
 export default function LiveChat({ userProfile }: any) {
-  const [activeTab, setActiveTab] = useState<"club" | "p2p">("club");
+  const [activeTab, setActiveTabInternal] = useState<"club" | "p2p">(() => {
+    return (localStorage.getItem("stahizza_live_chat_tab") as "club" | "p2p") || "club";
+  });
+
+  const setActiveTab = (tab: "club" | "p2p") => {
+    setActiveTabInternal(tab);
+    localStorage.setItem("stahizza_live_chat_tab", tab);
+  };
   const [messages, setMessages] = useState<any[]>([]);
   const [text, setText] = useState("");
   const [authUserId, setAuthUserId] = useState<string | null>(null);
@@ -335,7 +342,7 @@ export default function LiveChat({ userProfile }: any) {
   const currentUserId = getCurrentUserId();
 
   return (
-    <div className="flex flex-col h-[550px] bg-slate-900/40 border border-slate-800/80 rounded-2xl overflow-hidden font-sans relative">
+    <div className="flex flex-col h-[680px] bg-slate-900/40 border border-slate-800/80 rounded-2xl overflow-hidden font-sans relative mb-[2em]">
       {/* Header */}
       <div className="p-3 bg-slate-950/60 border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-2">

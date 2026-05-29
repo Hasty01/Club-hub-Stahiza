@@ -931,7 +931,7 @@ export default function App() {
                 <p className="text-xs text-slate-400 font-mono">Collaborate live with peer scholars & cabinets in real-time. No manual refresh needed.</p>
               </div>
 
-              <div className="min-h-[550px]">
+              <div className="min-h-[680px]">
                 <LiveChat userProfile={userProfile} />
               </div>
             </div>

@@ -61,8 +61,25 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedRecipient, setSelectedRecipient] = useState<Profile | null>(clubChatProfile);
-  const [activeConvId, setActiveConvId] = useState<string | null>("club-chat-group");
+  const [selectedRecipient, setSelectedRecipient] = useState<Profile | null>(() => {
+    const saved = localStorage.getItem("stahizza_dm_recipient");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return clubChatProfile;
+  });
+  const [activeConvId, setActiveConvId] = useState<string | null>(() => {
+    const saved = localStorage.getItem("stahizza_dm_recipient");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed.id === "club-chat-group" ? "club-chat-group" : null;
+      } catch (e) {}
+    }
+    return "club-chat-group";
+  });
   const [messages, setMessages] = useState<DmMessage[]>([]);
   const [text, setText] = useState("");
   
@@ -135,6 +152,12 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
   useEffect(() => {
     fetchProfiles();
     fetchOnlineUsers();
+    
+    // Auto-setup conversation if selectedRecipient was loaded from localStorage as a persistent DM recipient
+    const myId = userProfile?.id || authUserId;
+    if (myId && selectedRecipient && selectedRecipient.id !== "club-chat-group") {
+      handleSelectRecipient(selectedRecipient);
+    }
   }, [authUserId, userProfile?.id]);
 
   // 2. Auto-scroll chat on incoming messages (only inside the scroll container, without jumping viewport)
@@ -578,6 +601,7 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
 
     if (recipient.id === "club-chat-group") {
       setSelectedRecipient(recipient);
+      localStorage.setItem("stahizza_dm_recipient", JSON.stringify(recipient));
       setActiveConvId("club-chat-group");
       setMessages([]);
       return;
@@ -589,6 +613,7 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
     }
 
     setSelectedRecipient(recipient);
+    localStorage.setItem("stahizza_dm_recipient", JSON.stringify(recipient));
     setActiveConvId(null);
     setMessages([]);
 
@@ -742,7 +767,7 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
   });
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-12 h-[550px] bg-slate-900/10 border border-slate-800/80 rounded-2xl overflow-hidden font-sans text-xs">
+    <div className="grid grid-cols-1 md:grid-cols-12 h-full bg-slate-900/10 overflow-hidden font-sans text-xs">
       {/* 1. Classmate Contacts Column Selector */}
       <div className={`md:col-span-4 border-r border-slate-800/80 bg-slate-950/40 flex flex-col h-full ${
         selectedRecipient ? "hidden md:flex" : "flex"
@@ -1221,7 +1246,8 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
                 e.preventDefault();
                 handleSendDm();
               }}
-              className="p-3 border-t border-slate-800/80 bg-slate-950/60 flex gap-2 shrink-0"
+              className="flex gap-2 shrink-0 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3"
+              style={{ margin: "1em auto", width: "calc(100% - 2em)" }}
             >
               {/* Extra Attachment Toggle button */}
               <button
@@ -1254,7 +1280,7 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
                 value={text}
                 onChange={(e) => handleTextChange(e.target.value)}
                 placeholder="Type private message..."
-                className="flex-1 bg-slate-900/90 border border-slate-800 hover:border-slate-700 focus:focus:border-pink-500/50 focus:ring-1 focus:ring-pink-500/50 rounded-xl text-slate-100 text-xs px-3.5 py-2 placeholder:text-slate-505 outline-none transition-all font-sans"
+                className="flex-1 bg-slate-900/90 border border-slate-800 hover:border-slate-700 focus:border-pink-500/50 focus:ring-1 focus:ring-pink-500/50 rounded-xl text-slate-100 text-xs px-3.5 py-2 placeholder:text-slate-505 outline-none transition-all font-sans"
               />
 
               <button
