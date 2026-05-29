@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabaseClient";
 import { MessageSquare, Send, Sparkles, Check, CheckCheck, Smile, Bell, MessageCircle, Users } from "lucide-react";
 import PrivateDMs from "./PrivateDMs";
 
-export default function LiveChat({ userProfile }: any) {
+export default function LiveChat({ userProfile, isSidebar = false }: { userProfile: any; isSidebar?: boolean }) {
   const [activeTab, setActiveTabInternal] = useState<"club" | "p2p">(() => {
     return (localStorage.getItem("stahizza_live_chat_tab") as "club" | "p2p") || "club";
   });
@@ -388,7 +388,7 @@ export default function LiveChat({ userProfile }: any) {
 
       {activeTab === "p2p" ? (
         <div className="flex-1 min-h-0 bg-slate-950/15">
-          <PrivateDMs userProfile={userProfile} />
+          <PrivateDMs userProfile={userProfile} isSidebar={isSidebar} />
         </div>
       ) : (
         <>

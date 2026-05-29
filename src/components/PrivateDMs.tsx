@@ -57,7 +57,7 @@ const clubChatProfile: Profile = {
   email: "club@stahizza.org",
 };
 
-export default function PrivateDMs({ userProfile }: { userProfile: any }) {
+export default function PrivateDMs({ userProfile, isSidebar = false }: { userProfile: any; isSidebar?: boolean }) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -761,10 +761,14 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
   });
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-12 h-full bg-slate-900/10 overflow-hidden font-sans text-xs">
+    <div className={`grid h-full bg-slate-900/10 overflow-hidden font-sans text-xs ${
+      isSidebar ? "grid-cols-1" : "grid-cols-1 md:grid-cols-12"
+    }`}>
       {/* 1. Classmate Contacts Column Selector */}
-      <div className={`md:col-span-4 border-r border-slate-800/80 bg-slate-950/40 flex flex-col h-full ${
-        selectedRecipient ? "hidden md:flex" : "flex"
+      <div className={`border-r border-slate-800/80 bg-slate-950/40 flex flex-col h-full ${
+        isSidebar
+          ? (selectedRecipient ? "hidden" : "flex")
+          : (selectedRecipient ? "hidden md:flex md:col-span-4" : "flex md:col-span-4")
       }`}>
         {/* Search header panel */}
         <div className="p-3 border-b border-slate-800/80 bg-slate-950/20">
@@ -852,19 +856,21 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
       </div>
 
       {/* 2. Chat Feed Panel column wrapper */}
-      <div className={`md:col-span-8 flex flex-col h-full bg-slate-950/45 ${
-        !selectedRecipient ? "hidden md:flex items-center justify-center p-8 bg-slate-950/30" : "flex"
+      <div className={`flex flex-col h-full bg-slate-950/45 ${
+        isSidebar
+          ? (selectedRecipient ? "flex" : "hidden")
+          : (!selectedRecipient ? "hidden md:flex md:col-span-8 items-center justify-center p-8 bg-slate-950/30" : "flex md:col-span-8")
       }`}>
         {selectedRecipient ? (
           <>
             {/* active peer metadata bar header */}
             <div className="p-3 bg-slate-950/60 border-b border-slate-800/80 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2.5 min-w-0">
-                {/* Back button on mobile */}
+                {/* Back button on mobile & sidebar */}
                 <button
                   type="button"
                   onClick={() => setSelectedRecipient(null)}
-                  className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-pink-400 hover:bg-slate-900 shrink-0"
+                  className={`${isSidebar ? "flex" : "md:hidden"} p-1.5 rounded-lg text-slate-400 hover:text-pink-400 hover:bg-slate-900 shrink-0`}
                 >
                   <ArrowLeft className="w-4 h-4" />
                 </button>
@@ -1205,8 +1211,7 @@ export default function PrivateDMs({ userProfile }: { userProfile: any }) {
                 e.preventDefault();
                 handleSendDm();
               }}
-              className="flex gap-2 shrink-0 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3"
-              style={{ margin: "1em auto", width: "calc(100% - 2em)" }}
+              className="flex gap-1.5 sm:gap-2 shrink-0 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-2 sm:p-3 mx-2 sm:mx-4 my-2 w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)]"
             >
               {/* Extra Attachment Toggle button */}
               <button

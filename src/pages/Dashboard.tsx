@@ -995,7 +995,7 @@ export default function Dashboard({ userProfile, onNavigateToTab, onLogout, onUp
           <OnlineUsers />
 
           {/* Live Chat System */}
-          <LiveChat userProfile={userProfile} />
+          <LiveChat userProfile={userProfile} isSidebar={true} />
 
           {/* Quick Actions Router shortcuts */}
           <div id="quick-actions-card" className="bg-slate-900/40 border border-slate-800/80 p-5 rounded-2xl">
