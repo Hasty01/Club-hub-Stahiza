@@ -1026,7 +1026,20 @@ export default function Gallery({ userProfile, onGrantXp }: GalleryProps) {
       </div>
 
       {/* Images bento-like structural grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <motion.div 
+        variants={{
+          hidden: { opacity: 0 },
+          show: {
+            opacity: 1,
+            transition: {
+              staggerChildren: 0.04
+            }
+          }
+        }}
+        initial="hidden"
+        animate="show"
+        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+      >
         {filteredImages.length === 0 ? (
           <div className="col-span-full py-16 text-center bg-slate-900/15 border border-dashed border-slate-800 rounded-3xl">
             <ImageIcon className="w-12 h-12 text-slate-700 mx-auto mb-3" />
@@ -1039,11 +1052,27 @@ export default function Gallery({ userProfile, onGrantXp }: GalleryProps) {
           filteredImages.map((img, idx) => (
             <motion.div
               key={img.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, delay: Math.min(idx * 0.05, 0.5) }}
+              variants={{
+                hidden: { opacity: 0, y: 15, scale: 0.96 },
+                show: { 
+                  opacity: 1, 
+                  y: 0, 
+                  scale: 1,
+                  transition: {
+                    type: "spring",
+                    stiffness: 90,
+                    damping: 14
+                  }
+                }
+              }}
+              whileHover={{ 
+                scale: 1.02,
+                y: -6,
+                borderColor: "rgba(236, 72, 153, 0.3)",
+                transition: { duration: 0.2, ease: "easeOut" }
+              }}
               onClick={() => setSelectedImage(img)}
-              className="group bg-slate-900/35 border border-slate-800/60 hover:border-pink-500/20 rounded-2xl overflow-hidden cursor-pointer flex flex-col transition-all duration-300 hover:-translate-y-1.5 shadow-lg shadow-slate-950/20"
+              className="group bg-slate-900/35 border border-slate-800/60 rounded-2xl overflow-hidden cursor-pointer flex flex-col transition-all duration-350 shadow-lg shadow-slate-950/20"
             >
               {/* Photo representation layer */}
               <div className="relative aspect-[4/3] bg-slate-950 overflow-hidden shrink-0">
@@ -1137,7 +1166,7 @@ export default function Gallery({ userProfile, onGrantXp }: GalleryProps) {
             </motion.div>
           ))
         )}
-      </div>
+      </motion.div>
 
       {/* Brand new upload snapshot overlay popup modal */}
       <AnimatePresence>
