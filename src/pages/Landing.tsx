@@ -21,8 +21,8 @@ export default function Landing({ onEnterHub, onNavigateToLogin, onNavigateToReg
       {/* Landing Header */}
       <header id="landing-header shadow-md" className="relative z-10 w-full max-w-7xl mx-auto px-6 py-5 flex items-center justify-between border-b border-slate-900/45">
         <div id="landing-brand" className="flex items-center gap-3 select-none">
-          <div id="brand-logo" className="w-10 h-10 bg-pink-500/15 border border-pink-500/30 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(236,72,153,0.15)]">
-            <span className="font-extrabold text-pink-400 text-sm font-sans tracking-wide">ICH</span>
+          <div id="brand-logo" className="w-10 h-10 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(236,72,153,0.15)] overflow-hidden">
+            <img src="/logo.png" className="w-full h-full object-cover" alt="STAHIZZA ICT Logo" referrerPolicy="no-referrer" />
           </div>
           <div>
             <div className="flex items-center gap-1.5">

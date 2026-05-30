@@ -71,8 +71,8 @@ export default function Login({ onNavigateToRegister, onLoginSuccess, onBackToLa
         
         {/* Top Header Section */}
         <div id="login-header" className="text-center mb-6">
-          <div id="logo-badge-container" className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-400 mb-3.5 shadow-[0_0_15px_rgba(236,72,153,0.15)] animate-bounce">
-            <Terminal id="icon-terminal" className="w-6 h-6" />
+          <div id="logo-badge-container" className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-slate-950 border border-slate-800 text-pink-400 mb-3.5 shadow-[0_0_15px_rgba(236,72,153,0.15)] animate-bounce overflow-hidden">
+            <img src="/logo.png" className="w-full h-full object-cover" alt="STAHIZZA ICT Logo" referrerPolicy="no-referrer" />
           </div>
           <h2 id="login-hub-title" className="text-xl sm:text-2xl font-extrabold tracking-tight uppercase bg-gradient-to-r from-slate-100 via-pink-100 to-indigo-300 bg-clip-text text-transparent">
             STAHIZZA HUB
