@@ -5,7 +5,7 @@ import React, {
   useState,
 } from "react";
 
-import { supabase } from "../lib/supabaseClient";
+import { supabase, isSupabaseConfigured } from "../lib/supabaseClient";
 
 const AuthContext = createContext<any>(null);
 
@@ -19,6 +19,12 @@ export function AuthProvider({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
     // Helper to clear broken session data in localStorage
     const clearSupabaseSession = () => {
       try {
@@ -36,7 +42,14 @@ export function AuthProvider({
     supabase.auth.getUser()
       .then(({ data, error }) => {
         if (error) {
-          console.error("AuthContext user recovery error:", error);
+          if (
+            error.message?.toLowerCase().includes("session") ||
+            error.message?.toLowerCase().includes("missing")
+          ) {
+            console.info("AuthContext: No active auth session (user is in sandbox/logged-out state).");
+          } else {
+            console.warn("AuthContext user recovery reminder:", error);
+          }
           if (
             error.message?.toLowerCase().includes("refresh") || 
             error.message?.toLowerCase().includes("invalid") ||
@@ -53,7 +66,7 @@ export function AuthProvider({
         setLoading(false);
       })
       .catch((err) => {
-        console.error("AuthContext error catching initial user:", err);
+        console.info("AuthContext info catching initial user:", err);
         clearSupabaseSession();
         supabase.auth.signOut().catch(() => {});
         setUser(null);
