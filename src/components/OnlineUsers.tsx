@@ -1,11 +1,20 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabaseClient";
+import { supabase, isSupabaseConfigured } from "../lib/supabaseClient";
 import { Users2, Radio } from "lucide-react";
 
 export default function OnlineUsers() {
   const [users, setUsers] = useState<any[]>([]);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setUsers([
+        { id: "mock-1", username: "Atamba Joel", avatar_url: "https://api.dicebear.com/7.x/bottts/svg?seed=Joel", role: "president", last_seen: new Date().toISOString() },
+        { id: "mock-2", username: "Kyobe Arthur", avatar_url: "https://api.dicebear.com/7.x/bottts/svg?seed=Arthur", role: "cabinet", last_seen: new Date().toISOString() },
+        { id: "mock-3", username: "Nabulo Maria", avatar_url: "https://api.dicebear.com/7.x/bottts/svg?seed=Maria", role: "member", last_seen: new Date().toISOString() }
+      ]);
+      return;
+    }
+
     fetchUsers();
 
     const channel = supabase

@@ -1,7 +1,13 @@
 import { useEffect, useState, useRef } from "react";
-import { supabase } from "../lib/supabaseClient";
+import { supabase, isSupabaseConfigured } from "../lib/supabaseClient";
 import { MessageSquare, Send, Sparkles, Check, CheckCheck, Smile, Bell, MessageCircle, Users } from "lucide-react";
 import PrivateDMs from "./PrivateDMs";
+
+const DEFAULT_MOCK_MESSAGES = [
+  { id: "msg-1", sender_id: "mock-1", username: "Atamba Joel", content: "Welcome to the Standard High School Zzana ICT Club! Let's build something epic! 💻🔥", created_at: new Date(Date.now() - 3600000).toISOString(), avatar_url: "https://api.dicebear.com/7.x/bottts/svg?seed=Joel", role: "mentor", seen_by: ["mock-1"] },
+  { id: "msg-2", sender_id: "mock-2", username: "Kyobe Arthur", content: "Yesterday I configured our network switch. Next week we are doing database normalization exercises!", created_at: new Date(Date.now() - 1800000).toISOString(), avatar_url: "https://api.dicebear.com/7.x/bottts/svg?seed=Arthur", role: "cabinet", seen_by: ["mock-1", "mock-2"] },
+  { id: "msg-3", sender_id: "mock-3", username: "Nabulo Maria", content: "Do we have past UNEB paper sample solutions uploaded inside our Resources module?", created_at: new Date(Date.now() - 600000).toISOString(), avatar_url: "https://api.dicebear.com/7.x/bottts/svg?seed=Maria", role: "member", seen_by: ["mock-1", "mock-2", "mock-3"] }
+];
 
 export default function LiveChat({ userProfile, isSidebar = false }: { userProfile: any; isSidebar?: boolean }) {
   const [activeTab, setActiveTabInternal] = useState<"club" | "p2p">(() => {
@@ -25,11 +31,23 @@ export default function LiveChat({ userProfile, isSidebar = false }: { userProfi
 
   // Read current logged in user ID to align local state
   const getCurrentUserId = () => {
-    return userProfile?.id || authUserId;
+    return userProfile?.id || authUserId || "mock-current-student";
   };
 
   useEffect(() => {
     fetchMessages();
+
+    if (!isSupabaseConfigured) {
+      // Local setup for online presence notification
+      const localPresenceNotif = setTimeout(() => {
+        setToast({
+          title: "STAHIZZA Lab Gateway",
+          content: "You are logged in under Local Sandbox Mode. Local messages and reactions will preserve inside local session state."
+        });
+        setTimeout(() => setToast(null), 5000);
+      }, 1500);
+      return () => clearTimeout(localPresenceNotif);
+    }
 
     // Fetch the real underlying Supabase auth user if available
     supabase.auth.getUser().then(({ data }) => {
@@ -140,6 +158,16 @@ export default function LiveChat({ userProfile, isSidebar = false }: { userProfi
   }, [messages]);
 
   async function fetchMessages() {
+    if (!isSupabaseConfigured) {
+      const stored = localStorage.getItem("stahizza_mock_club_messages");
+      if (stored) {
+        setMessages(JSON.parse(stored));
+      } else {
+        setMessages(DEFAULT_MOCK_MESSAGES);
+      }
+      return;
+    }
+
     const { data } = await supabase
       .from("club_messages")
       .select("*")
@@ -155,6 +183,12 @@ export default function LiveChat({ userProfile, isSidebar = false }: { userProfi
   }
 
   async function fetchReactions() {
+    if (!isSupabaseConfigured) {
+      const stored = localStorage.getItem("stahizza_mock_club_reactions");
+      setReactions(stored ? JSON.parse(stored) : []);
+      return;
+    }
+
     try {
       const messageIds = messages.map((m) => m.id).filter(Boolean);
       if (messageIds.length === 0) return;
@@ -171,6 +205,8 @@ export default function LiveChat({ userProfile, isSidebar = false }: { userProfi
   }
 
   async function fetchTypingUsers() {
+    if (!isSupabaseConfigured) return;
+
     try {
       const tenSecondsAgo = new Date(Date.now() - 10 * 1000).toISOString();
       const { data } = await supabase
@@ -193,6 +229,8 @@ export default function LiveChat({ userProfile, isSidebar = false }: { userProfi
   }
 
   async function markMessagesAsSeen(loadedMessages: any[]) {
+    if (!isSupabaseConfigured) return;
+
     try {
       const { data, error } = await supabase.auth.getUser();
       const user = error ? null : data?.user;
@@ -221,6 +259,8 @@ export default function LiveChat({ userProfile, isSidebar = false }: { userProfi
   }
 
   async function updateMyTypingStatus(isTyping: boolean) {
+    if (!isSupabaseConfigured) return;
+
     try {
       const { data, error } = await supabase.auth.getUser();
       const user = error ? null : data?.user;
@@ -275,6 +315,29 @@ export default function LiveChat({ userProfile, isSidebar = false }: { userProfi
     }
     updateMyTypingStatus(false);
 
+    if (!isSupabaseConfigured) {
+      const activeUserId = getCurrentUserId();
+      const payload: any = {
+        id: `msg-${Date.now()}`,
+        content: text,
+        message: text,
+        sender_id: activeUserId,
+        username: userProfile?.name || "Companion",
+        avatar_url: userProfile?.avatarUrl || "https://api.dicebear.com/7.x/bottts/svg?seed=Companion",
+        role: userProfile?.role || "member",
+        created_at: new Date().toISOString(),
+        seen_by: [activeUserId]
+      };
+      
+      const stored = localStorage.getItem("stahizza_mock_club_messages");
+      const currentMessages = stored ? JSON.parse(stored) : DEFAULT_MOCK_MESSAGES;
+      const updated = [...currentMessages, payload];
+      setMessages(updated);
+      localStorage.setItem("stahizza_mock_club_messages", JSON.stringify(updated));
+      setText("");
+      return;
+    }
+
     // Fetch the real underlying Supabase auth user
     const { data, error: userError } = await supabase.auth.getUser();
     const user = userError ? null : data?.user;
@@ -299,6 +362,31 @@ export default function LiveChat({ userProfile, isSidebar = false }: { userProfi
   }
 
   async function toggleReaction(messageId: string, emoji: string) {
+    if (!isSupabaseConfigured) {
+      const currentUserId = getCurrentUserId();
+      const stored = localStorage.getItem("stahizza_mock_club_reactions");
+      const currentReactions = stored ? JSON.parse(stored) : [];
+      
+      const existingIdx = currentReactions.findIndex(
+        (r: any) => r.message_id === messageId && r.user_id === currentUserId && r.emoji === emoji
+      );
+      
+      let updated = [];
+      if (existingIdx > -1) {
+        updated = currentReactions.filter((_: any, idx: number) => idx !== existingIdx);
+      } else {
+        updated = [...currentReactions, {
+          id: `reaction-${Date.now()}`,
+          message_id: messageId,
+          user_id: currentUserId,
+          emoji,
+        }];
+      }
+      setReactions(updated);
+      localStorage.setItem("stahizza_mock_club_reactions", JSON.stringify(updated));
+      return;
+    }
+
     try {
       const { data, error } = await supabase.auth.getUser();
       const user = error ? null : data?.user;

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { supabase } from "../lib/supabaseClient";
+import { supabase, isSupabaseConfigured } from "../lib/supabaseClient";
 import { 
   User, 
   Send, 
@@ -46,6 +46,20 @@ interface OnlineUser {
   username: string;
   last_seen: string;
 }
+
+const MOCK_PROFILES_FOR_DMS: Profile[] = [
+  { id: "mock-1", name: "Atamba Joel", username: "joel", avatarUrl: "https://api.dicebear.com/7.x/bottts/svg?seed=Joel", classLevel: "S6", role: "mentor", email: "joel@stahizza.edu" },
+  { id: "mock-2", name: "Kyobe Arthur", username: "arthur", avatarUrl: "https://api.dicebear.com/7.x/bottts/svg?seed=Arthur", classLevel: "S6 Rep / Systems VP", role: "vp", email: "arthur@stahizza.edu" },
+  { id: "mock-3", name: "Nabulo Maria", username: "maria", avatarUrl: "https://api.dicebear.com/7.x/bottts/svg?seed=Maria", classLevel: "S3 Rep / Design Scholar", role: "designer", email: "maria@stahizza.edu" },
+  { id: "mock-4", name: "Hakim Kavuma", username: "hakim", avatarUrl: "https://api.dicebear.com/7.x/bottts/svg?seed=Hakim", classLevel: "S6 Student / Cadet", role: "member", email: "hakim@stahizza.edu" },
+  { id: "mock-5", name: "Namazzi Sandra", username: "sandra", avatarUrl: "https://api.dicebear.com/7.x/bottts/svg?seed=Sandra", classLevel: "S2 Rep / Visual Creator", role: "member", email: "sandra@stahizza.edu" }
+];
+
+const DEFAULT_MOCK_MESSAGES_FOR_DMS = [
+  { id: "msg-1", sender_id: "mock-1", username: "Atamba Joel", content: "Welcome to the Standard High School Zzana ICT Club! Let's build something epic! 💻🔥", created_at: new Date(Date.now() - 3600000).toISOString(), avatar_url: "https://api.dicebear.com/7.x/bottts/svg?seed=Joel", role: "mentor", seen_by: ["mock-1"] },
+  { id: "msg-2", sender_id: "mock-2", username: "Kyobe Arthur", content: "Yesterday I configured our network switch. Next week we are doing database normalization exercises!", created_at: new Date(Date.now() - 1800000).toISOString(), avatar_url: "https://api.dicebear.com/7.x/bottts/svg?seed=Arthur", role: "cabinet", seen_by: ["mock-1", "mock-2"] },
+  { id: "msg-3", sender_id: "mock-3", username: "Nabulo Maria", content: "Do we have past UNEB paper sample solutions uploaded inside our Resources module?", created_at: new Date(Date.now() - 600000).toISOString(), avatar_url: "https://api.dicebear.com/7.x/bottts/svg?seed=Maria", role: "member", seen_by: ["mock-1", "mock-2", "mock-3"] }
+];
 
 const clubChatProfile: Profile = {
   id: "club-chat-group",
@@ -111,6 +125,11 @@ export default function PrivateDMs({ userProfile, isSidebar = false }: { userPro
 
   // 1. Initial Load & Auth Sync
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setAuthUserId("mock-auth-student");
+      return;
+    }
+
     // Sync current authenticated user
     supabase.auth.getUser().then(({ data }) => {
       if (data?.user) {
@@ -184,6 +203,8 @@ export default function PrivateDMs({ userProfile, isSidebar = false }: { userPro
     isFirstScrollRef.current = true;
 
     fetchDmMessages(activeConvId);
+
+    if (!isSupabaseConfigured) return;
 
     // Unsubscribe from prior active conversation channel
     if (subscriptionRef.current) {
@@ -290,6 +311,11 @@ export default function PrivateDMs({ userProfile, isSidebar = false }: { userPro
 
   // Fetch registered club members
   async function fetchProfiles() {
+    if (!isSupabaseConfigured) {
+      setProfiles(MOCK_PROFILES_FOR_DMS);
+      return;
+    }
+
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -321,6 +347,16 @@ export default function PrivateDMs({ userProfile, isSidebar = false }: { userPro
 
   // Fetch online snapshots
   async function fetchOnlineUsers() {
+    if (!isSupabaseConfigured) {
+      const mappedOnline = MOCK_PROFILES_FOR_DMS.slice(0, 3).map(p => ({
+        id: p.id,
+        username: p.username,
+        last_seen: new Date().toISOString()
+      }));
+      setOnlineUsers(mappedOnline);
+      return;
+    }
+
     try {
       const { data } = await supabase
         .from("online_users")
@@ -335,6 +371,31 @@ export default function PrivateDMs({ userProfile, isSidebar = false }: { userPro
 
   // Fetch messages inside a conversation securely
   async function fetchDmMessages(convId: string) {
+    if (!isSupabaseConfigured) {
+      setLoadingMessages(true);
+      if (convId === "club-chat-group") {
+        const stored = localStorage.getItem("stahizza_mock_club_messages");
+        const raw = stored ? JSON.parse(stored) : DEFAULT_MOCK_MESSAGES_FOR_DMS;
+        const mapped: DmMessage[] = raw.map((m: any) => ({
+          id: m.id,
+          conversation_id: "club-chat-group",
+          sender_id: m.sender_id || m.username || "Unknown",
+          sender_name: m.username || "Peer Scholar",
+          content: m.content || m.message || "",
+          file_url: m.file_url || undefined,
+          file_type: m.file_type || undefined,
+          seen_by: m.seen_by || [],
+          created_at: m.created_at || new Date().toISOString(),
+        }));
+        setMessages(mapped);
+      } else {
+        const stored = localStorage.getItem(`stahizza_mock_dm_messages_${convId}`);
+        setMessages(stored ? JSON.parse(stored) : []);
+      }
+      setLoadingMessages(false);
+      return;
+    }
+
     try {
       setLoadingMessages(true);
       if (convId === "club-chat-group") {
@@ -431,6 +492,12 @@ export default function PrivateDMs({ userProfile, isSidebar = false }: { userPro
 
   // Fetch reactions associated with loaded messages
   async function fetchReactions() {
+    if (!isSupabaseConfigured) {
+      const stored = localStorage.getItem("stahizza_mock_club_reactions");
+      setReactions(stored ? JSON.parse(stored) : []);
+      return;
+    }
+
     try {
       const messageIds = messages.map((m) => m.id).filter(Boolean);
       if (messageIds.length === 0) return;
@@ -453,6 +520,30 @@ export default function PrivateDMs({ userProfile, isSidebar = false }: { userPro
 
   // Toggle emoji reaction state
   async function toggleReaction(messageId: string, emoji: string) {
+    if (!isSupabaseConfigured) {
+      const myId = getMyUserId();
+      if (!myId) return;
+      const stored = localStorage.getItem("stahizza_mock_club_reactions");
+      const currentReactions = stored ? JSON.parse(stored) : [];
+      let updated = [];
+      const existingIdx = currentReactions.findIndex(
+        (r: any) => r.message_id === messageId && r.user_id === myId && r.emoji === emoji
+      );
+      if (existingIdx > -1) {
+        updated = currentReactions.filter((_: any, idx: number) => idx !== existingIdx);
+      } else {
+        updated = [...currentReactions, {
+          id: `reaction-${Date.now()}`,
+          message_id: messageId,
+          user_id: myId,
+          emoji
+        }];
+      }
+      setReactions(updated);
+      localStorage.setItem("stahizza_mock_club_reactions", JSON.stringify(updated));
+      return;
+    }
+
     try {
       const myId = getMyUserId();
       if (!myId) return;
@@ -496,6 +587,7 @@ export default function PrivateDMs({ userProfile, isSidebar = false }: { userPro
 
   // Check if any other club member is currently typing in public
   async function checkClubTyping() {
+    if (!isSupabaseConfigured) return;
     try {
       const myId = getMyUserId();
       const tenSecondsAgo = new Date(Date.now() - 10 * 1000).toISOString();
@@ -523,6 +615,7 @@ export default function PrivateDMs({ userProfile, isSidebar = false }: { userPro
 
   // Check if currently selected peer is typing
   async function checkRecipientTyping() {
+    if (!isSupabaseConfigured) return;
     if (!selectedRecipient) {
       setRecipientTyping(false);
       return;
@@ -544,6 +637,7 @@ export default function PrivateDMs({ userProfile, isSidebar = false }: { userPro
 
   // Broadcast current user's typing indicator status
   async function updateMyTypingStatus(isTyping: boolean) {
+    if (!isSupabaseConfigured) return;
     try {
       const activeUserId = getMyUserId();
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(activeUserId || "");
@@ -610,6 +704,14 @@ export default function PrivateDMs({ userProfile, isSidebar = false }: { userPro
     localStorage.setItem("stahizza_dm_recipient", JSON.stringify(recipient));
     setActiveConvId(null);
     setMessages([]);
+
+    if (!isSupabaseConfigured) {
+      const u1 = myId < recipient.id ? myId : recipient.id;
+      const u2 = myId < recipient.id ? recipient.id : myId;
+      const mockConvId = `mock_conv_${u1}_${u2}`;
+      setActiveConvId(mockConvId);
+      return;
+    }
 
     try {
       // Step A: Attempt RPC function
@@ -678,6 +780,72 @@ export default function PrivateDMs({ userProfile, isSidebar = false }: { userPro
     setAttachmentUrl("");
     setShowAttachPopover(false);
     setAttachedCount(0);
+
+    if (!isSupabaseConfigured) {
+      if (activeConvId === "club-chat-group") {
+        let finalContent = msgContent;
+        if (currentAttachmentUrl.trim()) {
+          finalContent = `${msgContent} \n[Attachment: ${currentAttachmentUrl}]`.trim();
+        }
+
+        const payload: any = {
+          id: `msg-${Date.now()}`,
+          content: finalContent,
+          message: finalContent,
+          sender_id: myId,
+          username: getMyUserName(),
+          avatar_url: userProfile?.avatarUrl || userProfile?.avatar_url || "https://api.dicebear.com/7.x/bottts/svg?seed=Companion",
+          role: userProfile?.role || "member",
+          seen_by: [myId],
+          created_at: new Date().toISOString()
+        };
+
+        if (currentAttachmentUrl.trim()) {
+          payload.file_url = currentAttachmentUrl;
+          payload.file_type = currentAttachmentType;
+        }
+
+        const stored = localStorage.getItem("stahizza_mock_club_messages");
+        const currentMessages = stored ? JSON.parse(stored) : DEFAULT_MOCK_MESSAGES_FOR_DMS;
+        const updated = [...currentMessages, payload];
+        localStorage.setItem("stahizza_mock_club_messages", JSON.stringify(updated));
+        
+        const mapped: DmMessage[] = updated.map((m: any) => ({
+          id: m.id,
+          conversation_id: "club-chat-group",
+          sender_id: m.sender_id || m.username || "Unknown",
+          sender_name: m.username || "Peer Scholar",
+          content: m.content || m.message || "",
+          file_url: m.file_url || undefined,
+          file_type: m.file_type || undefined,
+          seen_by: m.seen_by || [],
+          created_at: m.created_at || new Date().toISOString(),
+        }));
+        setMessages(mapped);
+      } else {
+        const payload: DmMessage = {
+          id: `dm-${Date.now()}`,
+          conversation_id: activeConvId,
+          sender_id: myId,
+          content: msgContent,
+          seen_by: [myId],
+          created_at: new Date().toISOString()
+        };
+
+        if (currentAttachmentUrl.trim()) {
+          payload.file_url = currentAttachmentUrl;
+          payload.file_type = currentAttachmentType;
+        }
+
+        const storedKey = `stahizza_mock_dm_messages_${activeConvId}`;
+        const stored = localStorage.getItem(storedKey);
+        const currentMessages = stored ? JSON.parse(stored) : [];
+        const updated = [...currentMessages, payload];
+        localStorage.setItem(storedKey, JSON.stringify(updated));
+        setMessages(updated);
+      }
+      return;
+    }
 
     if (activeConvId === "club-chat-group") {
       let finalContent = msgContent;
