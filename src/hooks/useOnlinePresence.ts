@@ -10,9 +10,13 @@ export function useOnlinePresence(userProfile: any) {
       let activeUserId = userProfile?.id;
       
       if (!activeUserId) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          activeUserId = user.id;
+        try {
+          const { data, error } = await supabase.auth.getUser();
+          if (!error && data?.user) {
+            activeUserId = data.user.id;
+          }
+        } catch (e) {
+          console.warn("Presence hook user fetch exception:", e);
         }
       }
 

@@ -194,7 +194,8 @@ export default function LiveChat({ userProfile, isSidebar = false }: { userProfi
 
   async function markMessagesAsSeen(loadedMessages: any[]) {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data, error } = await supabase.auth.getUser();
+      const user = error ? null : data?.user;
       const currentUserId = userProfile?.id || authUserId || user?.id;
       if (!currentUserId || loadedMessages.length === 0) return;
 
@@ -221,7 +222,8 @@ export default function LiveChat({ userProfile, isSidebar = false }: { userProfi
 
   async function updateMyTypingStatus(isTyping: boolean) {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data, error } = await supabase.auth.getUser();
+      const user = error ? null : data?.user;
       const activeUserId = userProfile?.id || authUserId || user?.id;
       
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(activeUserId || "");
@@ -274,7 +276,8 @@ export default function LiveChat({ userProfile, isSidebar = false }: { userProfi
     updateMyTypingStatus(false);
 
     // Fetch the real underlying Supabase auth user
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data, error: userError } = await supabase.auth.getUser();
+    const user = userError ? null : data?.user;
     if (!user) return;
 
     const payload: any = {
@@ -297,7 +300,8 @@ export default function LiveChat({ userProfile, isSidebar = false }: { userProfi
 
   async function toggleReaction(messageId: string, emoji: string) {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data, error } = await supabase.auth.getUser();
+      const user = error ? null : data?.user;
       const currentUserId = userProfile?.id || authUserId || user?.id;
       if (!currentUserId) return;
 

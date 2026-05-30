@@ -527,8 +527,8 @@ export default function App() {
         {/* Sidebar Header Brand Area */}
         <div className={`p-4 border-b border-slate-900/60 flex items-center justify-between gap-3 ${sidebarCollapsed ? "justify-center" : ""}`}>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-pink-500/15 border border-pink-500/30 rounded-xl flex items-center justify-center shrink-0">
-              <span className="font-extrabold text-pink-400 text-xs font-sans tracking-wide">ICH</span>
+            <div className="w-9 h-9 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
+              <img src="/club-logo.png" className="w-full h-full object-cover" alt="STAHIZZA ICT Logo" referrerPolicy="no-referrer" />
             </div>
             {!sidebarCollapsed && (
               <div className="animate-fadeIn truncate">
@@ -663,8 +663,8 @@ export default function App() {
             
             <div className="flex items-center justify-between pb-3 border-b border-slate-900/60">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-pink-500/15 border border-pink-500/35 rounded-lg flex items-center justify-center">
-                  <span className="font-bold text-pink-400 text-xs">ICH</span>
+                <div className="w-8 h-8 bg-slate-950 border border-slate-800 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
+                  <img src="/club-logo.png" className="w-full h-full object-cover" alt="STAHIZZA ICT Logo" referrerPolicy="no-referrer" />
                 </div>
                 <div>
                   <h2 className="font-sans font-extrabold text-[11px] tracking-tight uppercase">STAHIZZA Hub</h2>
